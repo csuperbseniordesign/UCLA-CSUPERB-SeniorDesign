@@ -1,0 +1,40 @@
+name: telematics_sdk_example
+description: Demonstrates how to use the telematics_sdk plugin.
+publish_to: none
+version: 0.0.1+9
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  firebase_auth: ^4.17.3
+  firebase_database: ^10.4.4
+  http: ^1.2.0
+  group_button: ^5.3.4
+  url_launcher: ^6.2.5
+  flutter_pw_validator: ^1.6.0
+  flutter:
+    sdk: flutter
+
+  telematics_sdk:
+    path: ../
+  uuid: ^4.3.2
+  awesome_notifications: ^0.9.3+1
+  geolocator: ^12.0.0
+  intl_phone_field: ^3.2.0
+  flutter_launcher_icons: ^0.14.1
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/EyeMyWay_logo.png"
+flutter:
+  assets:
+    - assets/images/road.png
+    - assets/images/firebase_icon.png
+    - assets/images/telematics_icon.png
+    - assets/images/analytics_icon.png
+    - assets/images/phone_icon.png
+    - assets/images/gear_icon.png
+    - assets/images/screens.png
+  uses-material-design: true

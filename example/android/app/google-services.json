@@ -1,0 +1,68 @@
+{
+  "project_info": {
+    "project_number": "1087866779795",
+    "firebase_url": "https://telematics-sample-cd2af-default-rtdb.firebaseio.com",
+    "project_id": "telematics-sample-cd2af",
+    "storage_bucket": "telematics-sample-cd2af.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1087866779795:android:8f81bce241d4c66a05b566",
+        "android_client_info": {
+          "package_name": "com.example.sdk_demo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAk9910ZhjWPYEzRZbfqiy7brmhVjN0_QU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1087866779795:android:a28aec3e20a5c7c705b566",
+        "android_client_info": {
+          "package_name": "com.example.testandroidgitflow"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAk9910ZhjWPYEzRZbfqiy7brmhVjN0_QU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1087866779795:android:9a38b89768c9870305b566",
+        "android_client_info": {
+          "package_name": "com.telematicssdk.example"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAk9910ZhjWPYEzRZbfqiy7brmhVjN0_QU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
