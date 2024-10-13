@@ -15,9 +15,6 @@ class UnifiedAuthService {
 
   final TrackingApi _trackingApi = TrackingApi();
 
-  // final String instanceId = "5ad66859-5074-4a69-8593-5f46a0d1aa39";
-  // final String instanceKey = "7327c2db-cde2-4400-b083-57fcc907f84c";
-
   // Converts Firebase User to custom AppUser
   AppUser? _userFromFirebaseUser(User? user) {
     return user != null ? AppUser(uid: user.uid) : null;
@@ -401,7 +398,6 @@ class UnifiedAuthService {
 
   // Method to login to Damoov
   Future<void> login(String? userId, {required String instanceId}) async {
-    print('aaaaaaaaaaaaaaaaaaaaaaaaaaaa login');
     var url = Uri.parse('https://user.telematicssdk.com/v1/Auth/Login');
 
     var headers = {

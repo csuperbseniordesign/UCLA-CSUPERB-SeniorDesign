@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -12,13 +11,6 @@ class TokenResponse {
 }
 
 class TelematicsService {
-// final String instanceId = "ccfcceb5-c86d-4eea-8a76-e5aab2e89d21";
-//     final String instanceKey = "ceee91a5-87f2-4ef5-836a-5a7922718d6e";
-
-  // final String instanceId = '5ad66859-5074-4a69-8593-5f46a0d1aa39';
-
-  // final String instanceKey = '7327c2db-cde2-4400-b083-57fcc907f84c';
-
   Future<TokenResponse> registerUser({
     // required String firstName,
     // required String lastName,

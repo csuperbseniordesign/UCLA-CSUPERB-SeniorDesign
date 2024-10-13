@@ -7,7 +7,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:telematics_sdk_example/screens/patientUI/patient_home_screen.dart';
 import 'package:telematics_sdk_example/services/UnifiedAuthService.dart';
 import 'package:flutter_pw_validator/flutter_pw_validator.dart';
-import 'package:telematics_sdk_example/widgets/pop_up.dart';
 
 const String virtualDeviceToken = '';
 
@@ -349,7 +348,7 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
               }
 
               createUserWithEmailAndPassword(
-                  instanceId: instanceId, instanceKey: instanceKey!);
+                  instanceId: instanceId, instanceKey: instanceKey);
             }
           },
           style: FilledButton.styleFrom(
