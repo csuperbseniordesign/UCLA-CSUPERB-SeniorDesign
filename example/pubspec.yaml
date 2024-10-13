@@ -23,6 +23,7 @@ dependencies:
   geolocator: ^12.0.0
   intl_phone_field: ^3.2.0
   flutter_launcher_icons: ^0.14.1
+  cloud_firestore: ^4.17.5
 
 flutter_icons:
   android: true

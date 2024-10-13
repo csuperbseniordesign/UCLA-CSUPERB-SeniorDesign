@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:telematics_sdk_example/services/fire_fetch.dart';
 import 'package:telematics_sdk_example/services/user.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:telematics_sdk_example/screens/patientUI/patient_home_screen.dart';
@@ -325,8 +326,33 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
         height: 50,
         width: 350,
         child: FilledButton(
+          // Call firefetch to fetch id and key
+
+          // if id or key is undefined then give a pop up and return
+
           // call _signIn function or create new user function depending on screen displayed
-          onPressed: isLogin ? _signIn : createUserWithEmailAndPassword,
+          onPressed: () async {
+            String? instanceId = await fireFetch('InstanceId');
+            if (instanceId == Null) {
+              return;
+            }
+
+            // if user is logging in
+            if (isLogin) {
+              // then call the sign in function
+              print('Login');
+              _signIn(instanceId: instanceId!);
+            } else {
+              print('Sign up');
+              String? instanceKey = await fireFetch('InstanceKey');
+              if (instanceKey == Null) {
+                return;
+              }
+              createUserWithEmailAndPassword(
+                  instanceId: instanceId!, instanceKey: instanceKey!);
+            }
+          },
+
           style: FilledButton.styleFrom(
             backgroundColor: (Color.fromARGB(255, 103, 139, 183)),
             shape: RoundedRectangleBorder(
@@ -346,7 +372,8 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
     );
   }
 
-  Future<void> createUserWithEmailAndPassword() async {
+  Future<void> createUserWithEmailAndPassword(
+      {required String instanceId, required String instanceKey}) async {
     try {
       setState(() => isLoading = true);
       // register user in FireBase w/ filled out fields
@@ -357,8 +384,8 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
           birthday: "",
           physician: physician,
           physicianID: physicianUid!,
-          instanceId: '5ad66859-5074-4a69-8593-5f46a0d1aa39',
-          instanceKey: '7327c2db-cde2-4400-b083-57fcc907f84c');
+          instanceId: instanceId,
+          instanceKey: instanceKey);
       print(physician);
       // if registration is successful, grab device token
       if (user != null) {
@@ -394,7 +421,7 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
     }
   }
 
-  Future<void> _signIn() async {
+  Future<void> _signIn({required String instanceId}) async {
     try {
       setState(() => isLoading = true);
       // sign in with the credientials
@@ -410,12 +437,10 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
         if (!mounted) return;
         if (role == 'Patient') {
           // if it is a patient grab the token & login
-          String? deviceToken = await _auth.getDeviceTokenForUser(
-              user.uid, false,
-              instanceId: "5ad66859-5074-4a69-8593-5f46a0d1aa39");
+          String? deviceToken = await _auth
+              .getDeviceTokenForUser(user.uid, false, instanceId: instanceId);
           if (deviceToken != null) {
-            await _auth.login(deviceToken,
-                instanceId: "5ad66859-5074-4a69-8593-5f46a0d1aa39");
+            await _auth.login(deviceToken, instanceId: instanceId);
 
             if (!mounted) return;
             Navigator.of(context).pushReplacement(
