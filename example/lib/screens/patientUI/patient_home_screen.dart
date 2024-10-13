@@ -291,7 +291,7 @@ class _PatientHomeScreenState extends State<PatientHomeScreen>
   bool _isTripOngoing = false;
   String _speedInfo = "Waiting for trip to start...";
   final double notMovingSpeedThreshold = 0.5; // meters per second
-  final int inactivityTimeout = 60; // seconds
+  final int inactivityTimeout = 120; // seconds
 
   final NotificationService notificationService = NotificationService();
 
@@ -390,6 +390,8 @@ class _PatientHomeScreenState extends State<PatientHomeScreen>
     );
   }
 
+  bool _checkMovement = false;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -430,7 +432,12 @@ class _PatientHomeScreenState extends State<PatientHomeScreen>
           //     ? Text(
           //         'Tracking: ${_isSdkEnabled && _isTracking ? 'Enabled' : 'Disabled'}')
           //     : SizedBox.shrink(),
-          // Text(_getCurrentLocation()),
+          // unicorn
+          Text(_getCurrentLocation()),
+          Text('Is Trip Ongoing? ' + _isTripOngoing.toString()),
+          Text('Is Moving? ' + _checkMovement.toString()),
+          Text('Inactivity Timer: ' + _inactivityTimer.toString()),
+          Text('Mounted State: ' + mounted.toString()),
           _sizedBoxSpace,
           Text(
             'Tracking Status',
@@ -580,6 +587,7 @@ class _PatientHomeScreenState extends State<PatientHomeScreen>
 
     setState(() {
       // Only update trip state if there is a change
+      _checkMovement = isCurrentlyMoving;
       if (isCurrentlyMoving != _isTripOngoing) {
         if (isCurrentlyMoving) {
           // Movement detected
