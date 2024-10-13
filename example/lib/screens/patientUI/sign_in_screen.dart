@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:telematics_sdk_example/services/alert_user.dart';
 import 'package:telematics_sdk_example/services/fire_fetch.dart';
 import 'package:telematics_sdk_example/services/user.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:telematics_sdk_example/screens/patientUI/patient_home_screen.dart';
 import 'package:telematics_sdk_example/services/UnifiedAuthService.dart';
 import 'package:flutter_pw_validator/flutter_pw_validator.dart';
+import 'package:telematics_sdk_example/widgets/pop_up.dart';
 
 const String virtualDeviceToken = '';
 
@@ -326,33 +328,30 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
         height: 50,
         width: 350,
         child: FilledButton(
-          // Call firefetch to fetch id and key
-
-          // if id or key is undefined then give a pop up and return
-
-          // call _signIn function or create new user function depending on screen displayed
           onPressed: () async {
+            // get instanceId and check if it's not null
             String? instanceId = await fireFetch('InstanceId');
-            if (instanceId == Null) {
+            if (instanceId == null) {
+              // if it's null, show user network pop up
+              AlertUser.show(context);
               return;
             }
 
             // if user is logging in
             if (isLogin) {
               // then call the sign in function
-              print('Login');
-              _signIn(instanceId: instanceId!);
+              _signIn(instanceId: instanceId);
             } else {
-              print('Sign up');
+              // get instanceKey and check if it's null
               String? instanceKey = await fireFetch('InstanceKey');
-              if (instanceKey == Null) {
+              if (instanceKey == null) {
                 return;
               }
+
               createUserWithEmailAndPassword(
-                  instanceId: instanceId!, instanceKey: instanceKey!);
+                  instanceId: instanceId, instanceKey: instanceKey!);
             }
           },
-
           style: FilledButton.styleFrom(
             backgroundColor: (Color.fromARGB(255, 103, 139, 183)),
             shape: RoundedRectangleBorder(
@@ -459,7 +458,7 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
           throw Exception('Device token could not be retrieved.');
         }
       } else {
-        _snackBar('Failed to sign in. Please check your email and password.');
+        // _snackBar('Failed to sign in. Please check your email and password.');
       }
     } catch (e) {
       setState(() {
