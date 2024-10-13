@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -14,15 +15,17 @@ class TelematicsService {
 // final String instanceId = "ccfcceb5-c86d-4eea-8a76-e5aab2e89d21";
 //     final String instanceKey = "ceee91a5-87f2-4ef5-836a-5a7922718d6e";
 
-  final String instanceId = '5ad66859-5074-4a69-8593-5f46a0d1aa39';
+  // final String instanceId = '5ad66859-5074-4a69-8593-5f46a0d1aa39';
 
-  final String instanceKey = '7327c2db-cde2-4400-b083-57fcc907f84c';
+  // final String instanceKey = '7327c2db-cde2-4400-b083-57fcc907f84c';
 
   Future<TokenResponse> registerUser({
     // required String firstName,
     // required String lastName,
     // required String phone,
     required String email,
+    required String instanceId,
+    required String instanceKey,
     // required String clientId,
   }) async {
     const String url = "https://user.telematicssdk.com/v1/Registration/create";
@@ -67,7 +70,8 @@ class TelematicsService {
     }
   }
 
-  Future<Map<String, dynamic>> loginWithDeviceToken(String deviceToken) async {
+  Future<Map<String, dynamic>> loginWithDeviceToken(String deviceToken,
+      {required String instanceKey, required instanceId}) async {
     var body = jsonEncode({
       "LoginFields": "{\"DeviceToken\":\"$deviceToken\"}",
       "Password": instanceKey,

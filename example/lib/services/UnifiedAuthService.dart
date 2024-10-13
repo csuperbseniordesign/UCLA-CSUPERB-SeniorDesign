@@ -15,8 +15,8 @@ class UnifiedAuthService {
 
   final TrackingApi _trackingApi = TrackingApi();
 
-  final String instanceId = "5ad66859-5074-4a69-8593-5f46a0d1aa39";
-  final String instanceKey = "7327c2db-cde2-4400-b083-57fcc907f84c";
+  // final String instanceId = "5ad66859-5074-4a69-8593-5f46a0d1aa39";
+  // final String instanceKey = "7327c2db-cde2-4400-b083-57fcc907f84c";
 
   // Converts Firebase User to custom AppUser
   AppUser? _userFromFirebaseUser(User? user) {
@@ -31,6 +31,8 @@ class UnifiedAuthService {
     required String lastName,
     required String phone,
     required String clientId,
+    required String instanceId,
+    required String instanceKey,
   }) async {
     try {
       // Firebase Authentication to create user
@@ -45,7 +47,7 @@ class UnifiedAuthService {
         // firstName: firstName,
         // lastName: lastName,
         // phone: phone,
-        email: email,
+        email: email, instanceId: instanceId, instanceKey: instanceKey,
         // clientId: clientId,
       );
 
@@ -66,13 +68,16 @@ class UnifiedAuthService {
   }
 
   // Register with email, password, and user details for telematics
-  Future<AppUser?> registerPatient(
-      {required String email,
-      required String password,
-      required String gender,
-      required String birthday,
-      required String physician,
-      required String physicianID}) async {
+  Future<AppUser?> registerPatient({
+    required String email,
+    required String password,
+    required String gender,
+    required String birthday,
+    required String physician,
+    required String physicianID,
+    required String instanceId,
+    required String instanceKey,
+  }) async {
     try {
       // Firebase Authentication to create user
       UserCredential result = await _auth.createUserWithEmailAndPassword(
@@ -85,6 +90,8 @@ class UnifiedAuthService {
       TokenResponse tokenResponse = await _telematicsService.registerUser(
         // firstName: "",
         email: email,
+        instanceId: instanceId,
+        instanceKey: instanceKey,
       );
 
       // Store telematics tokens and username in Firebase database linked to the user's UID
@@ -229,7 +236,8 @@ class UnifiedAuthService {
   }
 
   // Get Device token (Firebase side)
-  Future<String?> getDeviceTokenForUser(String? uid, bool isNewUser) async {
+  Future<String?> getDeviceTokenForUser(String? uid, bool isNewUser,
+      {required String instanceId}) async {
     if (uid == null) {
       print("UID is null. Cannot retrieve device token.");
       return null;
@@ -245,7 +253,7 @@ class UnifiedAuthService {
         if (data != null && data.containsKey('deviceToken')) {
           final String? deviceToken = data['deviceToken'];
           print("Device token for UID $uid is: $deviceToken");
-          login(deviceToken);
+          login(deviceToken, instanceId: instanceId);
           if (isNewUser) {
             _trackingApi.showPermissionWizard(
                 enableAggressivePermissionsWizard: false,
@@ -392,12 +400,13 @@ class UnifiedAuthService {
   }
 
   // Method to login to Damoov
-  Future<void> login(String? userId) async {
+  Future<void> login(String? userId, {required String instanceId}) async {
+    print('aaaaaaaaaaaaaaaaaaaaaaaaaaaa login');
     var url = Uri.parse('https://user.telematicssdk.com/v1/Auth/Login');
 
     var headers = {
       'accept': 'application/json',
-      'InstanceId': 'ee050880-86db-4502-9e82-366da9e3d4de',
+      'InstanceId': instanceId,
       'content-type': 'application/json',
     };
 

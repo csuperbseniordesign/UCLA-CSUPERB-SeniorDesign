@@ -308,7 +308,7 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
         // print('Password reset email sent to $email');
       } catch (e) {
         // print('Failed to reset password: $e');
-         _snackBar("Failed to reset password $e");
+        _snackBar("Failed to reset password $e");
         // Handle the error appropriately, such as displaying an error message
       }
     } else {
@@ -351,22 +351,25 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
       setState(() => isLoading = true);
       // register user in FireBase w/ filled out fields
       AppUser? user = await _auth.registerPatient(
-        email: _controllerEmail.text,
-        password: _controllerPassword.text,
-        gender: "",
-        birthday: "",
-        physician: physician,
-        physicianID: physicianUid!,
-      );
+          email: _controllerEmail.text,
+          password: _controllerPassword.text,
+          gender: "",
+          birthday: "",
+          physician: physician,
+          physicianID: physicianUid!,
+          instanceId: '5ad66859-5074-4a69-8593-5f46a0d1aa39',
+          instanceKey: '7327c2db-cde2-4400-b083-57fcc907f84c');
       print(physician);
       // if registration is successful, grab device token
       if (user != null) {
-        String? deviceToken = await _auth.getDeviceTokenForUser(user.uid, true);
+        String? deviceToken = await _auth.getDeviceTokenForUser(user.uid, true,
+            instanceId: "5ad66859-5074-4a69-8593-5f46a0d1aa39");
 
         if (!mounted) return;
         // use the device token to login - needed for tracking
         if (deviceToken != null) {
-          await _auth.login(deviceToken);
+          await _auth.login(deviceToken,
+              instanceId: "5ad66859-5074-4a69-8593-5f46a0d1aa39");
 
           if (!mounted) return;
           // Perform the role check after successful sign-in
@@ -407,10 +410,12 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
         if (!mounted) return;
         if (role == 'Patient') {
           // if it is a patient grab the token & login
-          String? deviceToken =
-              await _auth.getDeviceTokenForUser(user.uid, false);
+          String? deviceToken = await _auth.getDeviceTokenForUser(
+              user.uid, false,
+              instanceId: "5ad66859-5074-4a69-8593-5f46a0d1aa39");
           if (deviceToken != null) {
-            await _auth.login(deviceToken);
+            await _auth.login(deviceToken,
+                instanceId: "5ad66859-5074-4a69-8593-5f46a0d1aa39");
 
             if (!mounted) return;
             Navigator.of(context).pushReplacement(
