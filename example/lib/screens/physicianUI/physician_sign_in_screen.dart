@@ -376,7 +376,7 @@ class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
         child: TextField(
           controller: controller,
           focusNode: focusNode,
-          cursorColor:  Color.fromARGB(255, 103, 139, 183),
+          cursorColor: Color.fromARGB(255, 103, 139, 183),
           // autofocus: false,
           decoration: InputDecoration(
             hintText: title,
@@ -434,14 +434,14 @@ class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
           width: 300,
           child: TextFormField(
             controller: _controllerConfirmPassword,
-            cursorColor:  Color.fromARGB(255, 103, 139, 183),
+            cursorColor: Color.fromARGB(255, 103, 139, 183),
             obscureText: true,
             decoration: const InputDecoration(
               hintText: 'CONFIRM PASSWORD',
               focusedBorder: UnderlineInputBorder(
-              borderSide:
-                  BorderSide(color: const Color.fromARGB(255, 4, 27, 63)),
-            ),
+                borderSide:
+                    BorderSide(color: const Color.fromARGB(255, 4, 27, 63)),
+              ),
             ),
             validator: (String? value) {
               if (value == null || value.isEmpty) {
@@ -486,7 +486,7 @@ class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
         // print('Password reset email sent to $email');
       } catch (e) {
         // print('Failed to reset password: $e');
-         _snackBar("Failed to reset password $e");
+        _snackBar("Failed to reset password $e");
         // Handle the error appropriately, such as displaying an error message
       }
     } else {
@@ -496,10 +496,10 @@ class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
     }
   }
 
-    void _snackBar(String error) {
+  void _snackBar(String error) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
   }
-  
+
   Widget _submitButton() {
     return Padding(
       padding: const EdgeInsets.only(top: 30, left: 25, right: 20),
@@ -585,7 +585,7 @@ class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
     }
   }
 
-Widget _loginOrRegisterButton() {
+  Widget _loginOrRegisterButton() {
     return Padding(
       padding: const EdgeInsets.only(top: 20, right: 100),
       // Link to change to sign up/sign in page
@@ -625,6 +625,7 @@ Widget _loginOrRegisterButton() {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
           // _decoration(),
@@ -657,7 +658,6 @@ Widget _loginOrRegisterButton() {
                 _submitButton(),
                 _loginOrRegisterButton(),
               ] else ...[
-                Padding(padding: const EdgeInsets.only(bottom: 105)),
                 _entryField('EMAIL', _controllerEmail),
                 _entryField('PASSWORD', _controllerPassword,
                     focusNode: _passwordFocusNode),

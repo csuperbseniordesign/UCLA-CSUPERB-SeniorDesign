@@ -513,6 +513,7 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
           _decoration(),
