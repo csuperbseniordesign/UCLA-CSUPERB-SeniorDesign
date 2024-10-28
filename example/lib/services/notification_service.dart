@@ -1,23 +1,21 @@
-import 'dart:ui';
-
 import 'package:awesome_notifications/awesome_notifications.dart';
 
 class NotificationService {
   // Initialize the notification service
   static Future<void> init() async {
     await AwesomeNotifications().initialize(null, [
-    NotificationChannel(
-      channelGroupKey: "basic_channel_group",
-      channelKey: "basic_channel",
-      channelName: "Basic Notification",
-      channelDescription: "Basic notifications channel",
-    )
-  ], channelGroups: [
-    NotificationChannelGroup(
-      channelGroupKey: "basic_channel_group",
-      channelGroupName: "Basic Group",
-    )
-  ]);
+      NotificationChannel(
+        channelGroupKey: "basic_channel_group",
+        channelKey: "basic_channel",
+        channelName: "Basic Notification",
+        channelDescription: "Basic notifications channel",
+      )
+    ], channelGroups: [
+      NotificationChannelGroup(
+        channelGroupKey: "basic_channel_group",
+        channelGroupName: "Basic Group",
+      )
+    ]);
   }
 
   /// Use this method to detect when a new notification or a schedule is created
@@ -39,16 +37,11 @@ class NotificationService {
   static Future<void> onActionReceivedMethod(
       ReceivedAction receivedAction) async {}
 
-  static Future<void> showEndTripNotification({
-    required String title,
-    required String body
-  }) async {
+  static Future<void> showEndTripNotification(
+      {required String title, required String body}) async {
     await AwesomeNotifications().createNotification(
-              content: NotificationContent(
-                  id: 1,
-                  channelKey: "basic_channel",
-                  title: title,
-                  body: body),
-            );
+      content: NotificationContent(
+          id: 1, channelKey: "basic_channel", title: title, body: body),
+    );
   }
 }

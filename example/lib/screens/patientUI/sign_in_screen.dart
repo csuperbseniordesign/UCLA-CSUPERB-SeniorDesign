@@ -72,7 +72,7 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
             child: Container(
               decoration: BoxDecoration(
                 border: Border.all(
-                  color: (const Color.fromARGB(255, 4, 27, 63))!,
+                  color: (const Color.fromARGB(255, 4, 27, 63)),
                   width: 5,
                 ),
               ),
@@ -332,7 +332,9 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
             String? instanceId = await fireFetch('InstanceId');
             if (instanceId == null) {
               // if it's null, show user network pop up
-              AlertUser.show(context);
+              AlertUser.show(context,
+                  title: 'Unable to connect to firebase',
+                  description: 'Please check your network connection');
               return;
             }
 
