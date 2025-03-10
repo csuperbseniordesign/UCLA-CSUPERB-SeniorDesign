@@ -19,7 +19,7 @@ var deviceToken;
 final _trackingApi = TrackingApi();
 
 final _form = Uri.parse(
-    "https://docs.google.com/forms/d/e/1FAIpQLScSEQzwtZ65oGXHDuHUoN9_UBNsGOTpOkcjczdoO_G-hqvU9g/viewform");
+    "https://docs.google.com/forms/d/e/1FAIpQLSclhBb5DnICnhiNHHUN4dH29fQDj1qmsDD9t74RzsKiE19bzg/viewform?usp=header");
 
 class SettingsScreen extends StatefulWidget {
   SettingsScreen({Key? key}) : super(key: key);

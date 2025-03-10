@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'package:telematics_sdk_example/services/UnifiedAuthService.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -22,6 +21,9 @@ class _PatientTripsScreenState extends State<PatientTripsScreen> {
   String email;
   String token;
   int tripCount;
+  int nightTimeDrivesCount = 0;
+  int highSpeedTripsCount = 0;
+
   _PatientTripsScreenState(this.email, this.token, this.tripCount);
   User? currentUser = FirebaseAuth.instance.currentUser;
   // final UnifiedAuthService _auth = UnifiedAuthService();
@@ -46,6 +48,7 @@ class _PatientTripsScreenState extends State<PatientTripsScreen> {
   List<String> sScores = [];
   List<String> pScores = [];
   List<String> spScores = [];
+    List<String> maxSpeedScores = [];
   List<Container> temp = [];
   @override
   void initState() {
@@ -54,6 +57,11 @@ class _PatientTripsScreenState extends State<PatientTripsScreen> {
   }
 
   Future<List<List<String>>> fetchTrips(String authToken, int tripCount) async {
+    DateTime now = DateTime.now();
+    DateTime twoWeeksAgo = now.subtract(Duration(days: 14));
+
+    String startDate = twoWeeksAgo.toUtc().toIso8601String();
+    String endDate = now.toUtc().toIso8601String();
     String startTime = "";
     String endTime = "";
 
@@ -66,20 +74,21 @@ class _PatientTripsScreenState extends State<PatientTripsScreen> {
           'authorization': 'Bearer $authToken'
         },
         body: jsonEncode({
-          'StartDate': '2024-01-20T09:46:59.265Z',
-          'EndDate': '2024-09-20T09:46:59.265Z',
+          'StartDate': startDate,
+          'EndDate': endDate,
           'IncludeDetails': true,
           'IncludeStatistics': true,
           'IncludeScores': true,
           'Locale': 'EN',
           'UnitSystem': 'Si',
           'SortBy': 'StartDateUtc',
-          'Paging': {'Page': 1, 'Count': 10, 'IncludePagingInfo': true}
+          'Paging': {'Page': 1, 'Count': 30, 'IncludePagingInfo': true}
         }),
       );
       if (response.statusCode == 200) {
         Map<String, dynamic> data = jsonDecode(response.body);
         if (data["Result"] != null) {
+          print(tripCount);
           for (int i = 0; i < tripCount; i++) {
             List<String> rawStartDate = data["Result"]['Trips'][i]['Data']
                     ['StartDate']
@@ -110,6 +119,22 @@ class _PatientTripsScreenState extends State<PatientTripsScreen> {
                   t[0].substring(2, 8) +
                   " AM";
             }
+
+            //Since Damoov's API nightHours are not properly working
+            // We have to manually check for nighttime driving
+            if (startHour >= 19 || startHour < 6) {
+              nightTimeDrivesCount++; // Increment night-time drive counter
+            }
+
+
+            // Calculating # of trips above 65 km/h to know whether driver potentially drove on the highway 
+            // If average speed was well above 65 then user most likely drove on the highway
+            double avgSpeed = double.parse(data["Result"]['Trips'][i]['Statistics']['AverageSpeed'].toString());
+            double maxSpeed = double.parse(data["Result"]['Trips'][i]['Statistics']['MaxSpeed'].toString());
+            if (avgSpeed > 75 || maxSpeed > 75) {
+              highSpeedTripsCount++; // Increment speed count
+            }
+
 
             startDates.add(startTime);
 
@@ -173,24 +198,30 @@ class _PatientTripsScreenState extends State<PatientTripsScreen> {
                     ['CorneringsCount']
                 .toString()
                 .split(".")[0]);
-            phoneUsages.add(data["Result"]['Trips'][i]['Statistics']
+            phoneUsages.add(double.parse(data["Result"]['Trips'][i]['Statistics']
                         ['PhoneUsageDurationMinutes']
-                    .toString() +
+                    .toString()).toStringAsFixed(2) +
                 " min");
-            nightHours.add(data["Result"]['Trips'][i]['Statistics']
+            nightHours.add(double.parse(data["Result"]['Trips'][i]['Statistics']
                         ['NightHours']
-                    .toString() +
-                " hrs");
+                    .toString()).toStringAsFixed(2) +
+                " min");
             durations.add(double.parse(data["Result"]['Trips'][i]['Statistics']
                             ['DurationMinutes']
                         .toString())
-                    .toStringAsPrecision(4) +
+                    .toStringAsPrecision(2) +
                 " min");
 
             avgSpeeds.add(double.parse(data["Result"]['Trips'][i]['Statistics']
                             ['AverageSpeed']
                         .toString())
-                    .toStringAsPrecision(5) +
+                    .toStringAsPrecision(2) +
+                " km/hr");
+            
+            maxSpeedScores.add(double.parse(data["Result"]['Trips'][i]['Statistics']
+                            ['MaxSpeed']
+                        .toString())
+                    .toStringAsPrecision(2) +
                 " km/hr");
 
             sScores.add(data["Result"]['Trips'][i]['Scores']['Safety']
@@ -222,7 +253,8 @@ class _PatientTripsScreenState extends State<PatientTripsScreen> {
         trips.add(brakings);
         trips.add(cornerings);
         trips.add(phoneUsages);
-        trips.add(nightHours);
+        //trips.add(nightHours);
+        trips.add(maxSpeedScores);
         trips.add(avgSpeeds);
         trips.add(sScores);
         trips.add(aScores);
@@ -232,7 +264,7 @@ class _PatientTripsScreenState extends State<PatientTripsScreen> {
         trips.add(pScores);
       } else {
         print(
-            'Failed to fetch daily statistics, status code: ${response.statusCode}, response: ${response.body}');
+            'Failed to fetch daily statistics in patient trips, status code: ${response.statusCode}, response: ${response.body}');
       }
     } catch (e) {
       print('Error fetching daily statistics: $e');
@@ -360,15 +392,26 @@ class _PatientTripsScreenState extends State<PatientTripsScreen> {
                         Text(phoneUsages[i].toString(),
                             textAlign: TextAlign.right)
                       ]),
+                  // Row(
+                  //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  //     children: [
+                  //       Text(
+                  //         "Night Driving",
+                  //         textAlign: TextAlign.left,
+                  //         style: TextStyle(fontWeight: FontWeight.bold),
+                  //       ),
+                  //       Text(nightHours[i].toString(),
+                  //           textAlign: TextAlign.right)
+                  //     ]),
                   Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          "Night Driving",
+                          "Max Speed",
                           textAlign: TextAlign.left,
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
-                        Text(nightHours[i].toString(),
+                        Text(maxSpeedScores[i].toString(),
                             textAlign: TextAlign.right)
                       ]),
                   Row(
@@ -450,20 +493,38 @@ class _PatientTripsScreenState extends State<PatientTripsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(email),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: <Color>[
-                  Color.fromARGB(255, 255, 255, 255),
-                  Color.fromARGB(255, 51, 110, 159)
-                ]),
-          ),
-        ),
       ),
-      body: ListView(
-        children: containers,
+      body: Column(
+        children: [
+          // Box displaying counts of night-time drives and trips with speed > 65 km/h
+          Padding(
+            padding: const EdgeInsets.all(10.0),
+            child: Container(
+              padding: EdgeInsets.all(10),
+              color: Color.fromARGB(255, 238, 235, 235),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Summary for Past 2 Weeks',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                    ),
+                  ),
+                  Text('Number of Night-Time Trips: $nightTimeDrivesCount'),
+                  Text('Number of Potential Highway Trips: $highSpeedTripsCount'),
+                ],
+              ),
+            ),
+          ),
+          // List of trips
+          Expanded(
+            child: ListView(
+              children: containers,
+            ),
+          ),
+        ],
       ),
     );
   }

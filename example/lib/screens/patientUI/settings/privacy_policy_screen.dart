@@ -38,7 +38,7 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
       title: const Text('1. Introduction'),
       // subtitle: const Text('Custom expansion arrow icon'),
       children: const <Widget>[
-        ListTile(subtitle: Text('[app name] is intended for use as a glaucoma monitoring tool for individuals with mild to moderate glaucoma. [app name] is a clinical tool and, thus, is committed to the protection of user privacy. The following document contains a composite of information to help users—both patient and physician—understand both the data collected from them and the ways in which the data is utilized.')),
+        ListTile(subtitle: Text('EyeMyWay is intended for use as a glaucoma monitoring tool for individuals with mild to moderate glaucoma. EyeMyWay is a clinical tool and, thus, is committed to the protection of user privacy. The following document contains a composite of information to help users—both patient and physician—understand both the data collected from them and the ways in which the data is utilized.')),
       ],
       onExpansionChanged: (bool expanded) {
         setState(() {
@@ -53,7 +53,7 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
       title: const Text('2. Types of Personal Data Collected'),
       // subtitle: const Text('Custom expansion arrow icon'),
       children: const <Widget>[
-        ListTile(subtitle: Text("To provide the best service as a glaucoma monitoring and severity detection tool, [app name] collects the following information.")),
+        ListTile(subtitle: Text("To provide the best service as a glaucoma monitoring and severity detection tool, EyeMyWay collects the following information.")),
         ListTile(subtitle:Text("\nPersonal Information", style: TextStyle(fontWeight: FontWeight.bold))),
         ListTile(subtitle: Text("The following personal information is collected from patients:\n \n• Email\n\nAn email address provides a method of communication with the user in emergencies (i.e., the user should visit their clinician immediately due to a rapid progression of their symptoms) or the retrieval of forgotten credentials. An email address additionally provides a unique identifier associated with each account.")),
         ListTile(subtitle: Text("\nThe following personal information can optionally be provided by patients to further assist the detection algorithm:\n\n• Age\n• Sex\n\nThe literature on predictive factors of glaucoma has shown that elderly individuals and females are more likely to develop glaucoma.\n\nThe following personal information is collected from physicians:\n\n• Email \n• Full name \n• Clinic name \n• Physician credentials\n• Phone number\n\nAn email address provides a method of communication with the user and a unique identifier associated with each account. Full name, clinic name, and physician credentials are used to verify an individual’s identity as a physician.")),
@@ -88,7 +88,7 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
       title: const Text('4. How the Collected Information is Used'),
       // subtitle: const Text('Custom expansion arrow icon'),
       children: const <Widget>[
-        ListTile(subtitle: Text("Personal contact information (i.e., email) is used for communication between [app name] and the patient. Optional personal information (i.e., age and sex) is used to provide more accurate monitoring of glaucoma progress. Raw smartphone sensor data is used to determine driving events that subsequently inform a user’s glaucoma severity.\n\nPersonal contact information (i.e., email) is used for communication between [app name] and the physician. Full name, clinic name, and physician credentials are used to verify that an individual is a physician.")),
+        ListTile(subtitle: Text("Personal contact information (i.e., email) is used for communication between EyeMyWay and the patient. Optional personal information (i.e., age and sex) is used to provide more accurate monitoring of glaucoma progress. Raw smartphone sensor data is used to determine driving events that subsequently inform a user’s glaucoma severity.\n\nPersonal contact information (i.e., email) is used for communication between EyeMyWay and the physician. Full name, clinic name, and physician credentials are used to verify that an individual is a physician.")),
       ],
       onExpansionChanged: (bool expanded) {
         setState(() {
@@ -152,7 +152,7 @@ Widget _tile6() {
     return ExpansionTile(
       title: const Text('8. Additional Questions'),
       children: const <Widget>[
-        ListTile(subtitle: Text("Please contact cscsulaseniordesign@gmail.com with any questions regarding this privacy policy. A representative from [app name] will address your inquiries within 48 hours.")),
+        ListTile(subtitle: Text("Please contact cscsulaseniordesign@gmail.com with any questions regarding this privacy policy. A representative from EyeMyWay will address your inquiries within 48 hours.")),
       ],
       onExpansionChanged: (bool expanded) {
         setState(() {
@@ -177,7 +177,7 @@ Widget _tile6() {
   }
 
   Widget _disclaimer(){
-    return Text("\nBy signing up for an account and using [appName], you acknowledge and agree to our use of the collected data.", textAlign: TextAlign.center ,style: TextStyle(fontWeight: FontWeight.bold));
+    return Text("\nBy signing up for an account and using EyeMyWay, you acknowledge and agree to our use of the collected data.", textAlign: TextAlign.center ,style: TextStyle(fontWeight: FontWeight.bold));
     // return Text("\nBy signing up for an account and using [appName], you agree to our use of the collected data.", );
   }
 

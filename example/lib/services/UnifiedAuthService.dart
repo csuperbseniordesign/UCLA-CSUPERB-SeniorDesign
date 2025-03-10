@@ -115,17 +115,29 @@ class UnifiedAuthService {
   late final String? selectedPhysicianUid;
 
   Future<List<DropdownMenuItem<String>>> getPhysicianDropdownItems() async {
-    List<DropdownMenuItem<String>> items = [];
-    DatabaseReference ref = FirebaseDatabase.instance.ref('physicians');
+  List<DropdownMenuItem<String>> items = [];
+  DatabaseReference ref = FirebaseDatabase.instance.ref('physicians');
 
-    // Only proceed if the user is authenticated
-    // User? currentUser = FirebaseAuth.instance.currentUser;
-    // if (currentUser != null) {
-    try {
-      DatabaseEvent event = await ref.once();
-      Map<dynamic, dynamic> physicians =
-          event.snapshot.value as Map<dynamic, dynamic>;
-      physicians.forEach((key, value) {
+  try {
+    DatabaseEvent event = await ref.once();
+
+    // Debugging: Check if data exists
+    if (!event.snapshot.exists) {
+      print("No data found at 'physicians' node.");
+      return items;
+    }
+
+    print("Raw snapshot value: ${event.snapshot.value}");
+
+    Map<dynamic, dynamic> physicians =
+        event.snapshot.value as Map<dynamic, dynamic>;
+
+    physicians.forEach((key, value) {
+      // Debugging: Check each entry
+      print("Processing physician: $key -> $value");
+
+      // Ensure value contains expected fields
+      if (value is Map && value.containsKey('firstName') && value.containsKey('lastName')) {
         String fullName = '${value['firstName']} ${value['lastName']}';
         items.add(
           DropdownMenuItem(
@@ -133,16 +145,18 @@ class UnifiedAuthService {
             child: Text(fullName),
           ),
         );
-      });
-    } catch (e) {
-      print(e.toString());
-      // Handle errors or return an empty list
-    }
-    // } else {
-    //   // Handle the case where the user is not authenticated
-    // }
-    return items;
+      } else {
+        print("Skipping invalid physician entry: $key -> $value");
+      }
+    });
+
+  } catch (e) {
+    print("Error fetching physicians: $e");
   }
+
+  return items;
+}
+
 
   Future<List<DropdownMenuItem<String>>> getPhysicianDropdownMenu(
       String currentPhysicianId) async {
@@ -511,7 +525,7 @@ class UnifiedAuthService {
     String drivingTime = "";
     try {
       var url = Uri.parse(
-          'https://api.telematicssdk.com/indicators/v2/statistics?startDate=2024-01-31&endDate=2024-12-31');
+          'https://api.telematicssdk.com/indicators/v2/statistics?startDate=2025-01-31&endDate=2025-12-31');
       final response = await client.get(
         url,
         headers: {
@@ -541,7 +555,7 @@ class UnifiedAuthService {
         statistics.add(drivingTime);
       } else {
         print(
-            'Failed to fetch daily statistics, status code: ${response.statusCode}, response: ${response.body}');
+            'Failed to fetch daily statistics in auth service, status code: ${response.statusCode}, response: ${response.body}');
       }
     } catch (e) {
       print('Error fetching daily statistics: $e');
@@ -562,7 +576,7 @@ class UnifiedAuthService {
     String phoneScore = "";
     try {
       var url = Uri.parse(
-          'https://api.telematicssdk.com/indicators/v2/Scores/safety?startDate=2024-01-31&endDate=2024-12-31');
+          'https://api.telematicssdk.com/indicators/v2/Scores/safety?startDate=2025-01-31&endDate=2025-12-31');
 
       final response = await client.get(
         url,
@@ -593,7 +607,7 @@ class UnifiedAuthService {
         scores.add(phoneScore);
       } else {
         print(
-            'Failed to fetch daily statistics, status code: ${response.statusCode}, response: ${response.body}');
+            'Failed to fetch daily statistics in auth service, status code: ${response.statusCode}, response: ${response.body}');
       }
     } catch (e) {
       print('Error fetching daily statistics: $e');
@@ -921,5 +935,45 @@ class UnifiedAuthService {
     } catch (e) {
       print("Error initializing and starting tracking: $e");
     }
+  }
+
+  static Future<Map<String, String>?> refreshAccessToken(String refreshToken) async {
+    var client = http.Client();
+    try {
+      var url = Uri.parse('https://api.telematicssdk.com/auth/refresh');
+
+      final response = await client.post(
+        url,
+        headers: {
+          'accept': 'application/json',
+          'content-type': 'application/json',
+        },
+        body: jsonEncode({'refresh_token': refreshToken}),
+      );
+
+      if (response.statusCode == 200) {
+        Map<String, dynamic> data = jsonDecode(response.body);
+        return {
+          'access_token': data['access_token'] ?? '',
+          'refresh_token': data['refresh_token'] ?? refreshToken,  // Keep old refreshToken if new one is not provided
+        };
+      } else {
+        print('Failed to refresh token: ${response.statusCode}, response: ${response.body}');
+        return null;
+      }
+    } catch (e) {
+      print('Error refreshing token: $e');
+      return null;
+    } finally {
+      client.close();
+    }
+  }
+
+  static Future<void> updateTokensInFirebase(
+      String patientId, String newAccessToken, String newRefreshToken) async {
+    await FirebaseDatabase.instance.ref('patients/$patientId').update({
+      'accessToken': newAccessToken,
+      'refreshToken': newRefreshToken,
+    });
   }
 }

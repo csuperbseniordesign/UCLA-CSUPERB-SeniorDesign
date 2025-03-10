@@ -48,18 +48,20 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
 
   // grab physician records from Firebase
   void loadPhysicians() async {
-    try {
-      var items = await _auth.getPhysicianDropdownItems();
-      setState(() {
-        physicianItems = items;
-        if (items.isNotEmpty && physicianUid == null) {
-          physicianUid = items.first.value;
-        }
-      });
-    } catch (e) {
-      print("Error loading physicians: $e");
-    }
+  try {
+    var items = await _auth.getPhysicianDropdownItems();
+    print("Physician items loaded: $items"); // Debugging print
+
+    setState(() {
+      physicianItems = items;
+      if (items.isNotEmpty && physicianUid == null) {
+        physicianUid = items.first.value;
+      }
+    });
+  } catch (e) {
+    print("Error loading physicians: $e");
   }
+}
 
   // border of the page and logo
   Widget _decoration() {
@@ -72,7 +74,7 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
             child: Container(
               decoration: BoxDecoration(
                 border: Border.all(
-                  color: (const Color.fromARGB(255, 4, 27, 63))!,
+                  color: (const Color.fromARGB(255, 4, 27, 63)),
                   width: 5,
                 ),
               ),
@@ -328,28 +330,26 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
         width: 350,
         child: FilledButton(
           onPressed: () async {
-            // get instanceId and check if it's not null
             String? instanceId = await fireFetch('InstanceId');
-            if (instanceId == null) {
-              // if it's null, show user network pop up
-              AlertUser.show(context);
-              return;
-            }
 
-            // if user is logging in
-            if (isLogin) {
-              // then call the sign in function
-              _signIn(instanceId: instanceId);
-            } else {
-              // get instanceKey and check if it's null
-              String? instanceKey = await fireFetch('InstanceKey');
-              if (instanceKey == null) {
-                return;
-              }
+                if (instanceId == null) {
+                  print('Error: instanceId is null');
+                  return; // Stop execution
+                }
 
-              createUserWithEmailAndPassword(
-                  instanceId: instanceId, instanceKey: instanceKey);
-            }
+                if (isLogin) {
+                  _signIn(instanceId: instanceId);
+                } else {
+                  String? instanceKey = await fireFetch('InstanceKey');
+
+                  if (instanceKey == null) {
+                    print('Error: instanceKey is null');
+                    return;
+                  }
+
+                  createUserWithEmailAndPassword(instanceId: instanceId, instanceKey: instanceKey);
+                }
+
           },
           style: FilledButton.styleFrom(
             backgroundColor: (Color.fromARGB(255, 103, 139, 183)),
@@ -388,27 +388,23 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
       // if registration is successful, grab device token
       if (user != null) {
         String? deviceToken = await _auth.getDeviceTokenForUser(user.uid, true,
-            instanceId: "5ad66859-5074-4a69-8593-5f46a0d1aa39");
+            instanceId: instanceId);
 
         if (!mounted) return;
         // use the device token to login - needed for tracking
-        if (deviceToken != null) {
-          await _auth.login(deviceToken,
-              instanceId: "5ad66859-5074-4a69-8593-5f46a0d1aa39");
+        await _auth.login(deviceToken,
+            instanceId: instanceId);
 
-          if (!mounted) return;
-          // Perform the role check after successful sign-in
-          String role = await _auth.checkUserRole(user.uid!);
-          if (role == 'Patient') {
-            Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (context) => PatientHomeScreen()));
-          }
-          // Stop loading
-          setState(() => isLoading = false);
-        } else {
-          throw Exception('Device token could not be retrieved.');
+        if (!mounted) return;
+        // Perform the role check after successful sign-in
+        String role = await _auth.checkUserRole(user.uid!);
+        if (role == 'Patient') {
+          Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => PatientHomeScreen()));
         }
-      } else {
+        // Stop loading
+        setState(() => isLoading = false);
+            } else {
         throw Exception(
             'Failed to sign in. Please check your email and password.');
       }
@@ -437,15 +433,13 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
           // if it is a patient grab the token & login
           String? deviceToken = await _auth
               .getDeviceTokenForUser(user.uid, false, instanceId: instanceId);
-          if (deviceToken != null) {
-            await _auth.login(deviceToken, instanceId: instanceId);
+          await _auth.login(deviceToken, instanceId: instanceId);
 
-            if (!mounted) return;
-            Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (context) => PatientHomeScreen()));
-            // Stop loading
-          }
-          setState(() => isLoading = false);
+          if (!mounted) return;
+          Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => PatientHomeScreen()));
+          // Stop loading
+                  setState(() => isLoading = false);
         } else if (role == 'Physician') {
           // If the role is Physician, but this sign-in method is for Patients,
           // you might want to show an error or redirect to the Physician sign-in page

@@ -2,7 +2,7 @@ import Flutter
 import UIKit
 import RaxelPulse
 import flutter_local_notifications
-@UIApplicationMain
+@main
 @objc class AppDelegate: FlutterAppDelegate {
   override func application(
     _ application: UIApplication,

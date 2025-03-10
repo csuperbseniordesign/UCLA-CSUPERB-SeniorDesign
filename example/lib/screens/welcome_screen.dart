@@ -11,7 +11,7 @@ Widget _decoration() {
           child: Container(
             decoration: BoxDecoration(
               border: Border.all(
-                color: (const Color.fromARGB(255, 4, 27, 63))!,
+                color: (const Color.fromARGB(255, 4, 27, 63)),
                 width: 5,
               ),
             ),

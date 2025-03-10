@@ -345,7 +345,7 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
   // List of items in filter menu
   var items = [
     'Sort by email',
-    'Sort by safety score',
+    'Sort by low safety score',
   ];
 
   @override
@@ -366,6 +366,21 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
     }
   }
 
+  Future<void> _deletePatient(String patientId, String accessToken) async {
+  DatabaseReference patientRef = FirebaseDatabase.instance.ref('patients/$patientId');
+  DatabaseReference userTokenRef = FirebaseDatabase.instance.ref('userTokens/$accessToken');
+
+  try {
+    await patientRef.remove(); // Delete patient
+    await userTokenRef.remove(); // Delete corresponding token
+
+    print("Patient and token deleted successfully.");
+  } catch (error) {
+    print("Error deleting patient: $error");
+  }
+}
+
+
   Future<void> _fetchPatients() async {
     DatabaseReference ref = FirebaseDatabase.instance.ref('patients');
     DatabaseEvent event = await ref.once();
@@ -385,9 +400,16 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
         return emailA.compareTo(emailB);
       });
 
+       // Print patient list in console
+    print("Fetched Patients:");
+    for (var patient in patients) {
+      print("Email: ${patient['email']}, ID: ${patient['key']}");
+      
+    }
+
       for (var i = 0; i < patients.length; i++) {
         String score = await fetchSummarySafetyScore(
-            "2024-01-01", "2024-10-10", patients.elementAt(i)['accessToken']);
+            "2025-01-01", "2025-10-10", patients.elementAt(i)['accessToken']);
         score = score.split(".")[0];
         scores.add(score);
       }
@@ -429,7 +451,7 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
         }
       } else {
         print(
-            'Failed to fetch daily statistics, status code: ${response.statusCode}, response: ${response.body}');
+            'Failed to fetch daily statistics in physician home screen, status code: ${response.statusCode}, response: ${response.body}');
       }
     } catch (e) {
       print('Error fetching daily statistics: $e');
@@ -477,7 +499,7 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
       });
       var map = Map.fromIterables(emails, _summaryScores);
       var mapEntries = map.entries.toList()
-        ..sort((a, b) => int.parse(a.value).compareTo(int.parse(b.value)));
+        ..sort((a, b) => (int.tryParse(a.value) ?? 0).compareTo((int.tryParse(b.value) ?? 0)));
       map.clear();
       map.addEntries(mapEntries);
       setState(() {
@@ -496,7 +518,9 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
         String token = _sortedPatients[index].split("BREAK")[1];
         String score = _sortedScores[index];
         Color tileColor = Colors.white;
-        int s = int.parse(score);
+        print('Raw score: $score');
+        int s = int.tryParse(score) ?? 0;
+        print('Parsed score: ' + s.toString());
         if (s >= 80 && s < 101) {
           tileColor = Color.fromARGB(255, 95, 158, 210);
         } else if (s >= 60 && s < 80) {
@@ -522,24 +546,29 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
   }
 
   Widget _buildPatientsList() {
-    return ListView.builder(
-      itemCount: _filteredPatientsList.length,
-      itemBuilder: (context, index) {
-        var patient = _filteredPatientsList[index];
-        String score = _summaryScores.elementAt(index);
-        String email = patient['email'] ?? 'No email';
-        String token = patient['accessToken'];
-        Color tileColor = Colors.white;
-        int s = int.parse(score);
-        if (s >= 80 && s < 101) {
-          tileColor = Color.fromARGB(255, 95, 158, 210);
-        } else if (s >= 60 && s < 80) {
-          tileColor = Color.fromARGB(255, 106, 121, 134);
-        } else if (s >= 1 && s < 60) {
-          tileColor = Color.fromARGB(255, 250, 38, 38);
-        }
-        ;
-        return new ListTile(
+  return SizedBox(height: 300,
+    child: SingleChildScrollView(
+      child: Column(
+        children: List.generate(_filteredPatientsList.length, (index) {
+          var patient = _filteredPatientsList[index];
+          String score = _summaryScores.elementAt(index);
+          String email = patient['email'] ?? 'No email';
+          String token = patient['accessToken'];
+          Color tileColor = Colors.white;
+      
+          print('Raw score: ${score}');
+          int s = int.tryParse(score) ?? 0;
+          print('Parsed Score: ${s}');
+          
+          if (s >= 80 && s < 101) {
+            tileColor = Color.fromARGB(255, 95, 158, 210);
+          } else if (s >= 60 && s < 80) {
+            tileColor = Color.fromARGB(255, 106, 121, 134);
+          } else if (s >= 1 && s < 60) {
+            tileColor = Color.fromARGB(255, 250, 38, 38);
+          }
+      
+          return ListTile(
             tileColor: tileColor,
             leading: Icon(Icons.person),
             title: Text(email, style: TextStyle(fontWeight: FontWeight.bold)),
@@ -550,10 +579,14 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
             },
             shape: Border(
               top: BorderSide(color: const Color.fromARGB(255, 98, 96, 96)),
-            ));
-      },
-    );
-  }
+            ),
+          );
+        }),
+      ),
+    ),
+  );
+}
+
 
   int _selectedIndex = 0;
   void _onItemTapped(int index) {
@@ -565,6 +598,8 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
       }
     });
   }
+
+  
 
   Widget _bottomNav() {
     return BottomNavigationBar(
@@ -660,37 +695,40 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: const Text('HOME'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.info),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => Tutorial()),
-              );
-            },
-          ),
+Widget build(BuildContext context) {
+  return Scaffold(
+    appBar: AppBar(
+      automaticallyImplyLeading: false,
+      title: const Text('HOME'),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.info),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => Tutorial()),
+            );
+          },
+        ),
+      ],
+    ),
+    body: Column(
+      children: [
+        _sortMenu(),
+        SizedBox(height: 10),  // Add spacing between the sort menu and search bar
+        if (dropdownvalue == "Sort by email") ...[
+          _searchBar(),
+          SizedBox(height: 10),  // Add space between the search bar and the list
+          Expanded(child: _buildPatientsList()),  // Wrap ListView with Expanded
+        ] else ...[
+          _sortedSearchBar(),
+          SizedBox(height: 10),  // Add space between the search bar and the list
+          Expanded(child: _buildPatientsSortedList()),  // Wrap ListView with Expanded
         ],
-      ),
-      body: Column(
-        children: [
-          _sortMenu(),
-          // _searchBar(),
-          if (dropdownvalue == "Sort by email") ...[
-            _searchBar(),
-            Expanded(child: _buildPatientsList()),
-          ] else ...[
-            _sortedSearchBar(),
-            Expanded(child: _buildPatientsSortedList()),
-          ],
-        ],
-      ),
-      bottomNavigationBar: _bottomNav(),
-    );
-  }
+      ],
+    ),
+    bottomNavigationBar: _bottomNav(),
+  );
+}
+
 }

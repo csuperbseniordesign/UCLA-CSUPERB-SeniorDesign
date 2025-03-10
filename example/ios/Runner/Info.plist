@@ -28,6 +28,8 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSBluetoothAlwaysUsageDescription</key>
@@ -42,8 +44,6 @@
 	<string>Our app requires location in order to accurately record driving events when they stop and begin.</string>
 	<key>NSMotionUsageDescription</key>
 	<string>Our app requires motion usage in order to discern between driving and other motion events.</string>
-	<key>ITSAppUsesNonExemptEncryption</key>
-	<false/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>

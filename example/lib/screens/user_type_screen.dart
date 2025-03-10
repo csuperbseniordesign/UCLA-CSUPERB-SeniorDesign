@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:telematics_sdk_example/screens/patientUI/sign_in_screen.dart';
-import 'package:telematics_sdk_example/screens/patientUI/patient_home_screen.dart';
 import 'package:telematics_sdk_example/screens/physicianUI/physician_sign_in_screen.dart';
 
 const _sizedBoxSpace = SizedBox(height: 50);
