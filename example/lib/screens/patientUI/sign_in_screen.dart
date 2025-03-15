@@ -7,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:telematics_sdk_example/screens/patientUI/patient_home_screen.dart';
 import 'package:telematics_sdk_example/services/UnifiedAuthService.dart';
 import 'package:flutter_pw_validator/flutter_pw_validator.dart';
+import 'package:telematics_sdk_example/widgets/show_dialog.dart';
 
 const String virtualDeviceToken = '';
 
@@ -269,9 +270,13 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
             ),
             validator: (String? value) {
               if (value == null || value.isEmpty) {
-                _snackBar('Please re-enter password');
+                showLoginDialog(
+                    context, "Login Failed", "Password Field is empty");
               }
               if (_controllerPassword.text != _controllerConfirmPassword.text) {
+                showLoginDialog(
+                    context, "Login Failed", "Email or Password is incorrect");
+
                 return "Password does not match";
               }
               return null;
@@ -335,13 +340,20 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
               AlertUser.show(context,
                   title: 'Unable to connect to firebase',
                   description: 'Please check your network connection');
+
               return;
             }
 
             // if user is logging in
             if (isLogin) {
               // then call the sign in function
-              _signIn(instanceId: instanceId);
+              try {
+                await _signIn(instanceId: instanceId);
+                print('success');
+              } catch (e) {
+                showLoginDialog(
+                    context, "Login Failed", "Email or Password is incorrect");
+              }
             } else {
               // get instanceKey and check if it's null
               String? instanceKey = await fireFetch('InstanceKey');
@@ -459,7 +471,8 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
           throw Exception('Device token could not be retrieved.');
         }
       } else {
-        // _snackBar('Failed to sign in. Please check your email and password.');
+        showLoginDialog(
+            context, "Login Failed", "Email or Password is incorrect");
       }
     } catch (e) {
       setState(() {

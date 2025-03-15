@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:telematics_sdk_example/screens/physicianUI/physician_home_screen.dart';
 import 'package:telematics_sdk_example/services/UnifiedAuthService.dart';
 import 'package:flutter_pw_validator/flutter_pw_validator.dart';
+import 'package:telematics_sdk_example/widgets/show_dialog.dart';
 
 class PhysicianSignInScreen extends StatefulWidget {
   const PhysicianSignInScreen({Key? key}) : super(key: key);
@@ -445,9 +446,13 @@ class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
             ),
             validator: (String? value) {
               if (value == null || value.isEmpty) {
+                showLoginDialog(
+                    context, "Login Failed", "Password Field is empty");
                 return 'Please re-enter password';
               }
               if (_controllerPassword.text != _controllerConfirmPassword.text) {
+                showLoginDialog(
+                    context, "Login Failed", "Email or Password is incorrect");
                 return "Password does not match";
               }
               return null;
@@ -574,6 +579,8 @@ class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
         //   // Stop loading
         setState(() => isLoading = false);
       } else {
+        showLoginDialog(
+            context, "Login Failed", "Email or Password is incorrect");
         throw Exception(
             'Failed to sign in. Please check your email and password.');
       }
