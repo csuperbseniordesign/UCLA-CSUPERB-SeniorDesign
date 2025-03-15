@@ -59,7 +59,7 @@ class TutorialState extends State<Tutorial> {
           "Tutorial - Settings Page",
           "Tap this icon at the bottom right corner "
               "to navigate to the Settings Page "
-              "where you can edit your profile, request your collected data, "
+              "where you can edit your profile, request your collected datas, "
               "and view information about the application.",
           Icons.settings_outlined,
         );
@@ -82,7 +82,7 @@ class TutorialState extends State<Tutorial> {
           Icons.data_exploration_sharp,
         );
         break;
-        case Bodies.privacyPolicy:
+      case Bodies.privacyPolicy:
         body = tutorialBody(
           "Tutorial - Settings Page",
           "Tap this icon in the settings page "
