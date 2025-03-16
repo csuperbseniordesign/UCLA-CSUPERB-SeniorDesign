@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:telematics_sdk_example/services/alert_user.dart';
 import 'package:telematics_sdk_example/services/fire_fetch.dart';
 import 'package:telematics_sdk_example/services/user.dart';
 import 'package:firebase_auth/firebase_auth.dart';

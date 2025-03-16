@@ -56,14 +56,125 @@ class _PatientTripsScreenState extends State<PatientTripsScreen> {
     super.initState();
   }
 
-  Future<List<List<String>>> fetchTrips(String authToken, int tripCount) async {
-    DateTime now = DateTime.now();
-    DateTime twoWeeksAgo = now.subtract(Duration(days: 14));
+  // Helper functions for unit conversion
+  double kmToMiles(double km) {
+    return km * 0.621371;
+  }
 
-    String startDate = twoWeeksAgo.toUtc().toIso8601String();
-    String endDate = now.toUtc().toIso8601String();
-    String startTime = "";
-    String endTime = "";
+  double kmhToMph(double kmh) {
+    return kmh * 0.621371;
+  }
+
+  // Extract coordinates from address string
+  (double, double)? extractCoordinates(String address) {
+    try {
+      print("\n=== Address Processing ===");
+      print("Original address: $address");
+      
+      // First, check if coordinates are in the address
+      RegExp coordRegex = RegExp(r'(\d+\.\d+),\s*(-?\d+\.\d+)');
+      var match = coordRegex.firstMatch(address);
+      if (match != null) {
+        double lat = double.parse(match.group(1)!);
+        double lon = double.parse(match.group(2)!);
+        print("Extracted coordinates: ($lat, $lon)");
+        return (lat, lon);
+      }
+      
+      // If no coordinates found, use default LA coordinates
+      print("No coordinates found, using default LA coordinates");
+      return (34.0522, -118.2437); // Los Angeles coordinates
+    } catch (e) {
+      print('Error extracting coordinates: $e');
+      return null;
+    }
+  }
+
+  Future<bool> isNightDriving(DateTime tripTime, double latitude, double longitude) async {
+    tripTime = tripTime.toLocal();
+    
+    try {
+      final response = await http.get(
+        Uri.parse(
+          'https://api.sunrise-sunset.org/json?lat=$latitude&lng=$longitude&date=${tripTime.year}-${tripTime.month}-${tripTime.day}&formatted=0'
+        )
+      );
+
+      if (response.statusCode == 200) {
+        Map<String, dynamic> data = jsonDecode(response.body);
+        if (data['status'] == 'OK') {
+          DateTime sunrise = DateTime.parse(data['results']['sunrise']).toLocal();
+          DateTime sunset = DateTime.parse(data['results']['sunset']).toLocal();
+          
+          // Add 30 minutes to sunrise and subtract 30 minutes from sunset for civil twilight
+          DateTime civilDawn = sunrise.add(Duration(minutes: 30));
+          DateTime civilDusk = sunset.subtract(Duration(minutes: 30));
+          
+          print("\n=== Night Driving Check ===");
+          print("Trip time: ${tripTime.toString()}");
+          print("Civil dawn: ${civilDawn.toString()}");
+          print("Civil dusk: ${civilDusk.toString()}");
+          
+          bool isNight = tripTime.isBefore(civilDawn) || tripTime.isAfter(civilDusk);
+          print("Is night: $isNight");
+          
+          return isNight;
+        }
+      }
+      
+      print("Error getting sunrise/sunset times, falling back to default night hours (7 PM - 6 AM)");
+      int hour = tripTime.hour;
+      return hour >= 19 || hour < 6;
+      
+    } catch (e) {
+      print("Error in isNightDriving: $e");
+      // Fallback to default night hours if API call fails
+      int hour = tripTime.hour;
+      return hour >= 19 || hour < 6;
+    }
+  }
+
+  Future<List<List<String>>> fetchTrips(String authToken, int tripCount) async {
+    // Clear previous data
+    trips.clear();
+    startDates.clear();
+    endDates.clear();
+    locations.clear();
+    mileages.clear();
+    durations.clear();
+    accelerations.clear();
+    brakings.clear();
+    cornerings.clear();
+    phoneUsages.clear();
+    nightHours.clear();
+    avgSpeeds.clear();
+    maxSpeedScores.clear();
+    sScores.clear();
+    aScores.clear();
+    bScores.clear();
+    cScores.clear();
+    spScores.clear();
+    pScores.clear();
+    
+    // Reset counters
+    nightTimeDrivesCount = 0;
+    highSpeedTripsCount = 0;
+
+    // Get current date and time in UTC
+    DateTime now = DateTime.now().toUtc();
+    // Get date 2 weeks ago in UTC
+    DateTime twoWeeksAgo = now.subtract(Duration(days: 14));
+    
+    // Format dates in ISO8601 format with UTC timezone
+    String startDate = twoWeeksAgo.toIso8601String();
+    String endDate = now.toIso8601String();
+
+    print("Fetching trips from $startDate to $endDate");
+    print("Requested trip count: $tripCount");
+
+    // Limit the request to maximum 50 trips as per API limitation
+    int requestCount = tripCount > 50 ? 50 : tripCount;
+    print("Requesting $requestCount trips (API limit: 50)");
 
     try {
       final response = await http.post(
@@ -80,197 +191,184 @@ class _PatientTripsScreenState extends State<PatientTripsScreen> {
           'IncludeStatistics': true,
           'IncludeScores': true,
           'Locale': 'EN',
-          'UnitSystem': 'Si',
+          'UnitSystem': 'Si',  // Keep as SI and convert manually for more precision
           'SortBy': 'StartDateUtc',
-          'Paging': {'Page': 1, 'Count': 30, 'IncludePagingInfo': true}
+          'SortOrder': 'Desc',
+          'Paging': {
+            'Page': 1,
+            'Count': requestCount,
+            'IncludePagingInfo': true
+          }
         }),
       );
+
+      print("Response status: ${response.statusCode}");
+      
       if (response.statusCode == 200) {
         Map<String, dynamic> data = jsonDecode(response.body);
-        if (data["Result"] != null) {
-          print(tripCount);
-          for (int i = 0; i < tripCount; i++) {
-            List<String> rawStartDate = data["Result"]['Trips'][i]['Data']
-                    ['StartDate']
-                .toString()
-                .split("T");
-            List<String> t = rawStartDate[1].split("-");
-
-            int startHour = int.parse(t[0].substring(0, 2));
-            if (startHour > 12) {
-              startHour = startHour - 12;
-              startTime = rawStartDate[0].substring(5, 7) +
-                  "-" +
-                  rawStartDate[0].substring(8, 10) +
-                  "-" +
-                  rawStartDate[0].substring(0, 4) +
-                  " " +
-                  startHour.toString() +
-                  t[0].substring(2, 8) +
-                  " PM";
-            } else {
-              startTime = rawStartDate[0].substring(5, 7) +
-                  "-" +
-                  rawStartDate[0].substring(8, 10) +
-                  "-" +
-                  rawStartDate[0].substring(0, 4) +
-                  " " +
-                  startHour.toString() +
-                  t[0].substring(2, 8) +
-                  " AM";
+        if (data["Result"] != null && data["Result"]['Trips'] != null) {
+          int actualTripCount = data["Result"]['Trips'].length;
+          print("\n=== Processing $actualTripCount trips ===");
+          
+          for (int i = 0; i < actualTripCount; i++) {
+            var trip = data["Result"]['Trips'][i];
+            
+            // Parse dates
+            DateTime startDateTime = DateTime.parse(trip['Data']['StartDate']).toLocal();
+            DateTime endDateTime = DateTime.parse(trip['Data']['EndDate']).toLocal();
+            
+            print("\n--- Trip ${i + 1} ---");
+            print("Start time: ${startDateTime.toString()}");
+            print("End time: ${endDateTime.toString()}");
+            
+            String startTime = _formatDateTime(startDateTime);
+            String endTime = _formatDateTime(endDateTime);
+            
+            // Get trip location coordinates
+            String startAddress = trip['Data']['Addresses']['Start']['Full'].toString();
+            var coords = extractCoordinates(startAddress);
+            
+            // Update the night driving check to handle async
+            bool isStartNight = false;
+            bool isEndNight = false;
+            
+            if (coords != null) {
+              isStartNight = await isNightDriving(startDateTime, coords.$1, coords.$2);
+              isEndNight = await isNightDriving(endDateTime, coords.$1, coords.$2);
+              
+              print("Start night driving: $isStartNight");
+              print("End night driving: $isEndNight");
+              
+              if (isStartNight || isEndNight) {
+                nightTimeDrivesCount++;
+                print("Trip counted as night driving");
+              }
             }
 
-            //Since Damoov's API nightHours are not properly working
-            // We have to manually check for nighttime driving
-            if (startHour >= 19 || startHour < 6) {
-              nightTimeDrivesCount++; // Increment night-time drive counter
+            // Process speeds
+            double maxSpeedKmh = double.parse(trip['Statistics']['MaxSpeed'].toString());
+            double maxSpeedMph = kmhToMph(maxSpeedKmh);
+            print("Max speed: $maxSpeedKmh km/h = $maxSpeedMph mph");
+            
+            // Check if this is a potential highway trip (max speed > 45 mph)
+            if (maxSpeedMph > 45.0) {
+                highSpeedTripsCount++;
+                print("Trip counted as potential highway trip (max speed: $maxSpeedMph mph)");
             }
-
-
-            // Calculating # of trips above 65 km/h to know whether driver potentially drove on the highway 
-            // If average speed was well above 65 then user most likely drove on the highway
-            double avgSpeed = double.parse(data["Result"]['Trips'][i]['Statistics']['AverageSpeed'].toString());
-            double maxSpeed = double.parse(data["Result"]['Trips'][i]['Statistics']['MaxSpeed'].toString());
-            if (avgSpeed > 75 || maxSpeed > 75) {
-              highSpeedTripsCount++; // Increment speed count
-            }
-
 
             startDates.add(startTime);
-
-            List<String> rawEndDate = data["Result"]['Trips'][i]['Data']
-                    ['EndDate']
-                .toString()
-                .split("T");
-
-            List<String> endT = rawEndDate[1].split("-");
-            int endHour = int.parse(endT[0].substring(0, 2));
-
-            if (endHour > 12) {
-              endHour = endHour - 12;
-
-              endTime = rawEndDate[0].substring(5, 7) +
-                  "-" +
-                  rawEndDate[0].substring(8, 10) +
-                  "-" +
-                  rawEndDate[0].substring(0, 4) +
-                  " " +
-                  endHour.toString() +
-                  endT[0].substring(2, 8) +
-                  " PM";
-            } else {
-              endTime = rawEndDate[0].substring(5, 7) +
-                  "-" +
-                  rawEndDate[0].substring(8, 10) +
-                  "-" +
-                  rawEndDate[0].substring(0, 4) +
-                  " " +
-                  endHour.toString() +
-                  endT[0].substring(2, 8) +
-                  " AM";
-            }
-
             endDates.add(endTime);
-
-            locations.add(data["Result"]['Trips'][i]['Data']['Addresses']
-                        ['Start']['Full']
-                    .toString() +
-                " to " +
-                data["Result"]['Trips'][i]['Data']['Addresses']['End']['Full']
-                    .toString());
-            mileages.add(double.parse(data["Result"]['Trips'][i]['Statistics']
-                            ['Mileage']
-                        .toString())
-                    .toStringAsPrecision(5) +
-                " km");
-
-            accelerations.add(data["Result"]['Trips'][i]['Statistics']
-                    ['AccelerationsCount']
-                .toString()
-                .split(".")[0]);
-
-            brakings.add(data["Result"]['Trips'][i]['Statistics']
-                    ['BrakingsCount']
-                .toString()
-                .split(".")[0]);
-
-            cornerings.add(data["Result"]['Trips'][i]['Statistics']
-                    ['CorneringsCount']
-                .toString()
-                .split(".")[0]);
-            phoneUsages.add(double.parse(data["Result"]['Trips'][i]['Statistics']
-                        ['PhoneUsageDurationMinutes']
-                    .toString()).toStringAsFixed(2) +
-                " min");
-            nightHours.add(double.parse(data["Result"]['Trips'][i]['Statistics']
-                        ['NightHours']
-                    .toString()).toStringAsFixed(2) +
-                " min");
-            durations.add(double.parse(data["Result"]['Trips'][i]['Statistics']
-                            ['DurationMinutes']
-                        .toString())
-                    .toStringAsPrecision(2) +
-                " min");
-
-            avgSpeeds.add(double.parse(data["Result"]['Trips'][i]['Statistics']
-                            ['AverageSpeed']
-                        .toString())
-                    .toStringAsPrecision(2) +
-                " km/hr");
             
-            maxSpeedScores.add(double.parse(data["Result"]['Trips'][i]['Statistics']
-                            ['MaxSpeed']
-                        .toString())
-                    .toStringAsPrecision(2) +
-                " km/hr");
+            // Add trip details with night driving info
+            locations.add("${trip['Data']['Addresses']['Start']['Full']} to ${trip['Data']['Addresses']['End']['Full']}" +
+                (isStartNight || isEndNight ? " (Night Drive)" : ""));
 
-            sScores.add(data["Result"]['Trips'][i]['Scores']['Safety']
+            // Convert mileage from km to miles
+            double mileageKm = double.parse(trip['Statistics']['Mileage'].toString());
+            double mileageMiles = kmToMiles(mileageKm);
+            mileages.add(mileageMiles.toStringAsPrecision(5) + " mi");
+
+            accelerations.add(trip['Statistics']['AccelerationsCount']
                 .toString()
                 .split(".")[0]);
-            aScores.add(data["Result"]['Trips'][i]['Scores']['Acceleration']
+
+            brakings.add(trip['Statistics']['BrakingsCount']
                 .toString()
                 .split(".")[0]);
-            bScores.add(data["Result"]['Trips'][i]['Scores']['Braking']
+
+            cornerings.add(trip['Statistics']['CorneringsCount']
                 .toString()
                 .split(".")[0]);
-            cScores.add(data["Result"]['Trips'][i]['Scores']['Cornering']
+            phoneUsages.add(double.parse(trip['Statistics']['PhoneUsageDurationMinutes']
+                        .toString()).toStringAsFixed(2) +
+                " min");
+            nightHours.add(double.parse(trip['Statistics']['NightHours']
+                        .toString()).toStringAsFixed(2) +
+                " min");
+            durations.add(double.parse(trip['Statistics']['DurationMinutes']
+                            .toString())
+                    .toStringAsPrecision(2) +
+                " min");
+
+            // Convert speeds to mph
+            double avgSpeedKmh = double.parse(trip['Statistics']['AverageSpeed'].toString());
+            double avgSpeedMph = kmhToMph(avgSpeedKmh);
+            avgSpeeds.add(avgSpeedMph.toStringAsPrecision(2) + " mph");
+            maxSpeedScores.add(maxSpeedMph.toStringAsPrecision(2) + " mph");
+
+            sScores.add(trip['Scores']['Safety']
                 .toString()
                 .split(".")[0]);
-            spScores.add(data["Result"]['Trips'][i]['Scores']['Speeding']
+            aScores.add(trip['Scores']['Acceleration']
                 .toString()
                 .split(".")[0]);
-            pScores.add(data["Result"]['Trips'][i]['Scores']['PhoneUsage']
+            bScores.add(trip['Scores']['Braking']
+                .toString()
+                .split(".")[0]);
+            cScores.add(trip['Scores']['Cornering']
+                .toString()
+                .split(".")[0]);
+            spScores.add(trip['Scores']['Speeding']
+                .toString()
+                .split(".")[0]);
+            pScores.add(trip['Scores']['PhoneUsage']
                 .toString()
                 .split(".")[0]);
           }
+          
+          print("Successfully processed $actualTripCount trips");
+          print("Lists sizes - startDates: ${startDates.length}, endDates: ${endDates.length}, locations: ${locations.length}");
+        } else {
+          print("No trips found in the response");
+          print("Response body: ${response.body}");
         }
-        trips.add(startDates);
-        trips.add(endDates);
-        trips.add(locations);
-        trips.add(mileages);
-        trips.add(durations);
-        trips.add(accelerations);
-        trips.add(brakings);
-        trips.add(cornerings);
-        trips.add(phoneUsages);
-        //trips.add(nightHours);
-        trips.add(maxSpeedScores);
-        trips.add(avgSpeeds);
-        trips.add(sScores);
-        trips.add(aScores);
-        trips.add(bScores);
-        trips.add(cScores);
-        trips.add(spScores);
-        trips.add(pScores);
       } else {
-        print(
-            'Failed to fetch daily statistics in patient trips, status code: ${response.statusCode}, response: ${response.body}');
+        print('Failed to fetch trips, status code: ${response.statusCode}');
+        print('Response body: ${response.body}');
       }
     } catch (e) {
-      print('Error fetching daily statistics: $e');
+      print('Error fetching trips: $e');
+      print('Stack trace: ${StackTrace.current}');
     }
-    // setState(() {});
+
+    // Add all lists to trips in the correct order
+    trips.add(startDates);
+    trips.add(endDates);
+    trips.add(locations);
+    trips.add(mileages);
+    trips.add(durations);
+    trips.add(accelerations);
+    trips.add(brakings);
+    trips.add(cornerings);
+    trips.add(phoneUsages);
+    trips.add(maxSpeedScores);
+    trips.add(avgSpeeds);
+    trips.add(sScores);
+    trips.add(aScores);
+    trips.add(bScores);
+    trips.add(cScores);
+    trips.add(spScores);
+    trips.add(pScores);
+
+    print("Final trips list size: ${trips.length}");
+    print("Each sublist size: ${trips.isNotEmpty ? trips[0].length : 0}");
+    
     return trips;
+  }
+
+  // Helper method to format DateTime
+  String _formatDateTime(DateTime dt) {
+    String period = dt.hour >= 12 ? 'PM' : 'AM';
+    int hour = dt.hour > 12 ? dt.hour - 12 : dt.hour;
+    hour = hour == 0 ? 12 : hour; // Convert 0 to 12 for 12 AM
+    
+    return '${dt.month.toString().padLeft(2, '0')}-'
+           '${dt.day.toString().padLeft(2, '0')}-'
+           '${dt.year} '
+           '${hour.toString().padLeft(2, '0')}:'
+           '${dt.minute.toString().padLeft(2, '0')}:'
+           '${dt.second.toString().padLeft(2, '0')} '
+           '$period';
   }
 
   // get the patient's accumulated totals
@@ -278,12 +376,13 @@ class _PatientTripsScreenState extends State<PatientTripsScreen> {
     try {
       var items = await fetchTrips(this.token, this.tripCount);
       if (items.isNotEmpty) {
-          // setState(() {
         trips = items;
-        for (int i = 0; i < tripCount; i++) {
-          // setState(() {
-          // containers.add(Container(
-            temp.add(Container(
+        // Use the actual number of trips we have data for
+        int actualTrips = trips[0].length; // since all lists should have same length
+        print("Creating containers for $actualTrips trips");
+        
+        for (int i = 0; i < actualTrips; i++) {
+          temp.add(Container(
             color: Color.fromARGB(255, 238, 235, 235),
             margin: EdgeInsets.all(10),
             child: Column(
@@ -476,8 +575,6 @@ class _PatientTripsScreenState extends State<PatientTripsScreen> {
                       ]),
                 ]),
           ));
-          // });
-    
         }
         setState(() {
           containers = temp;
@@ -485,6 +582,7 @@ class _PatientTripsScreenState extends State<PatientTripsScreen> {
       }
     } catch (e) {
       print("Error loading stats: $e");
+      print("Stack trace: ${StackTrace.current}");
     }
   }
 

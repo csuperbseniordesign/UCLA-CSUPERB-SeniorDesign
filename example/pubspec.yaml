@@ -15,7 +15,7 @@ dependencies:
   flutter_pw_validator: ^1.6.0
   flutter:
     sdk: flutter
-  flutter_local_notifications: ^16.1.0
+  flutter_local_notifications: ^18.0.1
 
   telematics_sdk:
     path: ../
@@ -25,6 +25,7 @@ dependencies:
   intl_phone_field: ^3.2.0
   flutter_launcher_icons: ^0.14.1
   cloud_firestore: ^4.17.5
+  latlong2: ^0.9.1
 
 flutter_icons:
   android: true
