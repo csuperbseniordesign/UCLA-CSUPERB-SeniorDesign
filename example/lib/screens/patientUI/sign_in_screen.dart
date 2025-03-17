@@ -47,20 +47,20 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
 
   // grab physician records from Firebase
   void loadPhysicians() async {
-  try {
-    var items = await _auth.getPhysicianDropdownItems();
-    print("Physician items loaded: $items"); // Debugging print
+    try {
+      var items = await _auth.getPhysicianDropdownItems();
+      print("Physician items loaded: $items"); // Debugging print
 
-    setState(() {
-      physicianItems = items;
-      if (items.isNotEmpty && physicianUid == null) {
-        physicianUid = items.first.value;
-      }
-    });
-  } catch (e) {
-    print("Error loading physicians: $e");
+      setState(() {
+        physicianItems = items;
+        if (items.isNotEmpty && physicianUid == null) {
+          physicianUid = items.first.value;
+        }
+      });
+    } catch (e) {
+      print("Error loading physicians: $e");
+    }
   }
-}
 
   // border of the page and logo
   Widget _decoration() {
@@ -331,24 +331,24 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
           onPressed: () async {
             String? instanceId = await fireFetch('InstanceId');
 
-                if (instanceId == null) {
-                  print('Error: instanceId is null');
-                  return; // Stop execution
-                }
+            if (instanceId == null) {
+              print('Error: instanceId is null');
+              return; // Stop execution
+            }
 
-                if (isLogin) {
-                  _signIn(instanceId: instanceId);
-                } else {
-                  String? instanceKey = await fireFetch('InstanceKey');
+            if (isLogin) {
+              _signIn(instanceId: instanceId);
+            } else {
+              String? instanceKey = await fireFetch('InstanceKey');
 
-                  if (instanceKey == null) {
-                    print('Error: instanceKey is null');
-                    return;
-                  }
+              if (instanceKey == null) {
+                print('Error: instanceKey is null');
+                return;
+              }
 
-                  createUserWithEmailAndPassword(instanceId: instanceId, instanceKey: instanceKey);
-                }
-
+              createUserWithEmailAndPassword(
+                  instanceId: instanceId, instanceKey: instanceKey);
+            }
           },
           style: FilledButton.styleFrom(
             backgroundColor: (Color.fromARGB(255, 103, 139, 183)),
@@ -391,8 +391,7 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
 
         if (!mounted) return;
         // use the device token to login - needed for tracking
-        await _auth.login(deviceToken,
-            instanceId: instanceId);
+        await _auth.login(user.uid, instanceId: instanceId);
 
         if (!mounted) return;
         // Perform the role check after successful sign-in
@@ -403,7 +402,7 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
         }
         // Stop loading
         setState(() => isLoading = false);
-            } else {
+      } else {
         throw Exception(
             'Failed to sign in. Please check your email and password.');
       }
@@ -432,13 +431,13 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
           // if it is a patient grab the token & login
           String? deviceToken = await _auth
               .getDeviceTokenForUser(user.uid, false, instanceId: instanceId);
-          await _auth.login(deviceToken, instanceId: instanceId);
+          await _auth.login(user.uid, instanceId: instanceId);
 
           if (!mounted) return;
           Navigator.of(context).pushReplacement(
               MaterialPageRoute(builder: (context) => PatientHomeScreen()));
           // Stop loading
-                  setState(() => isLoading = false);
+          setState(() => isLoading = false);
         } else if (role == 'Physician') {
           // If the role is Physician, but this sign-in method is for Patients,
           // you might want to show an error or redirect to the Physician sign-in page

@@ -27,7 +27,7 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
   List<String> _sortedScores = [];
   Map<String, String> _sortedMap = Map();
   TextEditingController _filterSortedController = TextEditingController();
-  
+
   final UnifiedAuthService _auth = UnifiedAuthService();
 
   // Initial value (email by default)
@@ -57,19 +57,20 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
   }
 
   Future<void> _deletePatient(String patientId, String accessToken) async {
-  DatabaseReference patientRef = FirebaseDatabase.instance.ref('patients/$patientId');
-  DatabaseReference userTokenRef = FirebaseDatabase.instance.ref('userTokens/$accessToken');
+    DatabaseReference patientRef =
+        FirebaseDatabase.instance.ref('patients/$patientId');
+    DatabaseReference userTokenRef =
+        FirebaseDatabase.instance.ref('userTokens/$accessToken');
 
-  try {
-    await patientRef.remove(); // Delete patient
-    await userTokenRef.remove(); // Delete corresponding token
+    try {
+      await patientRef.remove(); // Delete patient
+      await userTokenRef.remove(); // Delete corresponding token
 
-    print("Patient and token deleted successfully.");
-  } catch (error) {
-    print("Error deleting patient: $error");
+      print("Patient and token deleted successfully.");
+    } catch (error) {
+      print("Error deleting patient: $error");
+    }
   }
-}
-
 
   Future<void> _fetchPatients() async {
     DatabaseReference ref = FirebaseDatabase.instance.ref('patients');
@@ -90,16 +91,20 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
         return emailA.compareTo(emailB);
       });
 
-       // Print patient list in console
-    print("Fetched Patients:");
-    for (var patient in patients) {
-      print("Email: ${patient['email']}, ID: ${patient['key']} deviceToken: ${patient['deviceToken']}");
-      
-    }
+      // Print patient list in console
+      print("Fetched Patients:");
+      for (var patient in patients) {
+        print(
+            "Email: ${patient['email']}, ID: ${patient['key']} deviceToken: ${patient['deviceToken']}");
+      }
 
       for (var i = 0; i < patients.length; i++) {
         String score = await fetchSummarySafetyScore(
-            "2025-01-01", "2025-10-10", patients.elementAt(i)['accessToken'], patients.elementAt(i)['deviceToken']);
+            "2025-01-01",
+            "2025-10-10",
+            patients.elementAt(i)['accessToken'],
+            patients.elementAt(i)['deviceToken'],
+            patients.elementAt(i)['key']);
         score = score.split(".")[0];
         scores.add(score);
       }
@@ -113,8 +118,8 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
     }
   }
 
-  Future<String> fetchSummarySafetyScore(
-    String startDate, String endDate, String authToken, String deviceToken) async {
+  Future<String> fetchSummarySafetyScore(String startDate, String endDate,
+      String authToken, String deviceToken, String key) async {
     print("\n=== Starting Safety Score Fetch ===");
     print("Start Date: $startDate");
     print("End Date: $endDate");
@@ -125,15 +130,25 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
     String statistics = '';
     String? instanceId = await fireFetch('InstanceId');
     print("Instance ID from fireFetch: $instanceId");
+    String? fetchKey = await fireFetch('InstanceKey');
+    String instanceKey = fetchKey.toString();
+    print("Instance key from fireFetch: $instanceKey");
 
     try {
-      var url = Uri.parse('https://api.telematicssdk.com/indicators/v2/Scores/safety')
-          .replace(queryParameters: {'StartDate': startDate, 'EndDate': endDate});
+      var url =
+          Uri.parse('https://api.telematicssdk.com/indicators/v2/Scores/safety')
+              .replace(queryParameters: {
+        'StartDate': startDate,
+        'EndDate': endDate
+      });
       print("Making API request to: $url");
 
       final response = await client.get(
         url,
-        headers: {'accept': 'application/json', 'authorization': 'Bearer $authToken'},
+        headers: {
+          'accept': 'application/json',
+          'authorization': 'Bearer $authToken'
+        },
       );
 
       print("Initial API response status: ${response.statusCode}");
@@ -148,80 +163,66 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
 
         if (instanceId != null) {
           print("Fetching current refresh token from Firebase...");
-          DatabaseEvent event = await FirebaseDatabase.instance
-              .ref('patients/$deviceToken')
-              .once();
+          DatabaseEvent event =
+              await FirebaseDatabase.instance.ref('patients/$key').once();
 
           if (event.snapshot.exists) {
             final data = event.snapshot.value as Map<dynamic, dynamic>;
+            String? email = data['email'];
+            print("Email for user: " + email.toString());
             String? currentRefreshToken = data['refreshToken'];
-            print("Current refresh token from Firebase: ${currentRefreshToken?.substring(0, 10)}...");
+            print(
+                "Current refresh token from Firebase: ${currentRefreshToken?.substring(0, 10)}...");
 
             if (currentRefreshToken != null) {
               print("Attempting to refresh token with UnifiedAuthService...");
-              var refreshResponse = await _auth.refreshToken(currentRefreshToken, instanceId);
+              var refreshResponse = await _auth.refreshToken(
+                  deviceToken, instanceId, instanceKey, currentRefreshToken);
               print("Refresh response: $refreshResponse");
-              
-              if (refreshResponse != null && refreshResponse['Result'] != null) {
-                String newAccessToken = refreshResponse['Result']['AccessToken']['Token'];
-                String newRefreshToken = refreshResponse['Result']['RefreshToken'];
-                print("New access token: ${newAccessToken.substring(0, 10)}...");
-                print("New refresh token: ${newRefreshToken.substring(0, 10)}...");
-                
+
+              if (refreshResponse != null &&
+                  refreshResponse['Result'] != null) {
+                String newAccessToken =
+                    refreshResponse['Result']['AccessToken']['Token'];
+                String newRefreshToken =
+                    refreshResponse['Result']['RefreshToken'];
+                print(
+                    "New access token: ${newAccessToken.substring(0, 10)}...");
+                print(
+                    "New refresh token: ${newRefreshToken.substring(0, 10)}...");
+
                 print("Updating tokens in Firebase...");
-                await FirebaseDatabase.instance.ref('patients/$deviceToken').update({
-                  'accessToken': newAccessToken,
-                  'refreshToken': newRefreshToken,
-                });
+                await UnifiedAuthService.updateTokensInFirebase(
+                    key, newAccessToken, newRefreshToken);
                 print("Tokens updated in Firebase successfully");
 
                 print("Retrying API call with new token...");
                 final retryResponse = await client.get(
                   url,
-                  headers: {'accept': 'application/json', 'authorization': 'Bearer $newAccessToken'},
+                  headers: {
+                    'accept': 'application/json',
+                    'authorization': 'Bearer $newAccessToken'
+                  },
                 );
 
                 print("Retry response status: ${retryResponse.statusCode}");
                 print("Retry response body: ${retryResponse.body}");
 
                 if (retryResponse.statusCode == 200) {
-                  Map<String, dynamic> retryData = jsonDecode(retryResponse.body);
-                  statistics = retryData["Result"]?["SafetyScore"]?.toString() ?? "0";
-                  print("Successfully fetched safety score after token refresh: $statistics");
+                  Map<String, dynamic> retryData =
+                      jsonDecode(retryResponse.body);
+                  statistics =
+                      retryData["Result"]?["SafetyScore"]?.toString() ?? "0";
+                  print(
+                      "Successfully fetched safety score after token refresh: $statistics");
                 } else {
-                  print("Error retrying with new token: ${retryResponse.statusCode}");
+                  print(
+                      "Error retrying with new token: ${retryResponse.statusCode}");
                   print("Error response body: ${retryResponse.body}");
                 }
               } else {
-                print("Token refresh failed, attempting login fallback...");
-                var loginResponse = await _auth.login(deviceToken, instanceId: instanceId);
-                if (loginResponse != null && loginResponse['Result'] != null) {
-                  String newAccessToken = loginResponse['Result']['AccessToken']['Token'];
-                  String newRefreshToken = loginResponse['Result']['RefreshToken'];
-                  
-                  print("Login successful, updating tokens in Firebase...");
-                  await FirebaseDatabase.instance.ref('patients/$deviceToken').update({
-                    'accessToken': newAccessToken,
-                    'refreshToken': newRefreshToken,
-                  });
-
-                  print("Retrying API call with new token from login...");
-                  final retryResponse = await client.get(
-                    url,
-                    headers: {'accept': 'application/json', 'authorization': 'Bearer $newAccessToken'},
-                  );
-
-                  print("Login retry response status: ${retryResponse.statusCode}");
-                  print("Login retry response body: ${retryResponse.body}");
-
-                  if (retryResponse.statusCode == 200) {
-                    Map<String, dynamic> retryData = jsonDecode(retryResponse.body);
-                    statistics = retryData["Result"]?["SafetyScore"]?.toString() ?? "0";
-                    print("Successfully fetched safety score after login: $statistics");
-                  }
-                } else {
-                  print("Login fallback failed");
-                }
+                print("refresh response is null or error");
+                statistics = '0';
               }
             } else {
               print("No refresh token found in Firebase");
@@ -244,7 +245,6 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
     print("=== Finished Safety Score Fetch ===\n");
     return statistics;
   }
-
 
   void _filterPatientsList() {
     String filter = _filterController.text.toLowerCase();
@@ -283,7 +283,8 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
       });
       var map = Map.fromIterables(emails, _summaryScores);
       var mapEntries = map.entries.toList()
-        ..sort((a, b) => (int.tryParse(a.value) ?? 0).compareTo((int.tryParse(b.value) ?? 0)));
+        ..sort((a, b) => (int.tryParse(a.value) ?? 0)
+            .compareTo((int.tryParse(b.value) ?? 0)));
       map.clear();
       map.addEntries(mapEntries);
       setState(() {
@@ -330,47 +331,47 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
   }
 
   Widget _buildPatientsList() {
-  return SizedBox(height: 300,
-    child: SingleChildScrollView(
-      child: Column(
-        children: List.generate(_filteredPatientsList.length, (index) {
-          var patient = _filteredPatientsList[index];
-          String score = _summaryScores.elementAt(index);
-          String email = patient['email'] ?? 'No email';
-          String token = patient['accessToken'];
-          Color tileColor = Colors.white;
-      
-          print('Raw score: ${score}');
-          int s = int.tryParse(score) ?? 0;
-          print('Parsed Score: ${s}');
-          
-          if (s >= 80 && s < 101) {
-            tileColor = Color.fromARGB(255, 95, 158, 210);
-          } else if (s >= 60 && s < 80) {
-            tileColor = Color.fromARGB(255, 106, 121, 134);
-          } else if (s >= 1 && s < 60) {
-            tileColor = Color.fromARGB(255, 250, 38, 38);
-          }
-      
-          return ListTile(
-            tileColor: tileColor,
-            leading: Icon(Icons.person),
-            title: Text(email, style: TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text("Summary Safety Score: ${score}"),
-            onTap: () {
-              Navigator.of(context).push(MaterialPageRoute(
-                  builder: (context) => PatientDisplayScreen(email, token)));
-            },
-            shape: Border(
-              top: BorderSide(color: const Color.fromARGB(255, 98, 96, 96)),
-            ),
-          );
-        }),
-      ),
-    ),
-  );
-}
+    return SizedBox(
+      height: 300,
+      child: SingleChildScrollView(
+        child: Column(
+          children: List.generate(_filteredPatientsList.length, (index) {
+            var patient = _filteredPatientsList[index];
+            String score = _summaryScores.elementAt(index);
+            String email = patient['email'] ?? 'No email';
+            String token = patient['accessToken'];
+            Color tileColor = Colors.white;
 
+            print('Raw score: ${score}');
+            int s = int.tryParse(score) ?? 0;
+            print('Parsed Score: ${s}');
+
+            if (s >= 80 && s < 101) {
+              tileColor = Color.fromARGB(255, 95, 158, 210);
+            } else if (s >= 60 && s < 80) {
+              tileColor = Color.fromARGB(255, 106, 121, 134);
+            } else if (s >= 1 && s < 60) {
+              tileColor = Color.fromARGB(255, 250, 38, 38);
+            }
+
+            return ListTile(
+              tileColor: tileColor,
+              leading: Icon(Icons.person),
+              title: Text(email, style: TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: Text("Summary Safety Score: ${score}"),
+              onTap: () {
+                Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => PatientDisplayScreen(email, token)));
+              },
+              shape: Border(
+                top: BorderSide(color: const Color.fromARGB(255, 98, 96, 96)),
+              ),
+            );
+          }),
+        ),
+      ),
+    );
+  }
 
   int _selectedIndex = 0;
   void _onItemTapped(int index) {
@@ -382,8 +383,6 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
       }
     });
   }
-
-  
 
   Widget _bottomNav() {
     return BottomNavigationBar(
@@ -479,40 +478,45 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
   }
 
   @override
-Widget build(BuildContext context) {
-  return Scaffold(
-    appBar: AppBar(
-      automaticallyImplyLeading: false,
-      title: const Text('HOME'),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.info),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => Tutorial()),
-            );
-          },
-        ),
-      ],
-    ),
-    body: Column(
-      children: [
-        _sortMenu(),
-        SizedBox(height: 10),  // Add spacing between the sort menu and search bar
-        if (dropdownvalue == "Sort by email") ...[
-          _searchBar(),
-          SizedBox(height: 10),  // Add space between the search bar and the list
-          Expanded(child: _buildPatientsList()),  // Wrap ListView with Expanded
-        ] else ...[
-          _sortedSearchBar(),
-          SizedBox(height: 10),  // Add space between the search bar and the list
-          Expanded(child: _buildPatientsSortedList()),  // Wrap ListView with Expanded
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        title: const Text('HOME'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.info),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => Tutorial()),
+              );
+            },
+          ),
         ],
-      ],
-    ),
-    bottomNavigationBar: _bottomNav(),
-  );
-}
-
+      ),
+      body: Column(
+        children: [
+          _sortMenu(),
+          SizedBox(
+              height: 10), // Add spacing between the sort menu and search bar
+          if (dropdownvalue == "Sort by email") ...[
+            _searchBar(),
+            SizedBox(
+                height: 10), // Add space between the search bar and the list
+            Expanded(
+                child: _buildPatientsList()), // Wrap ListView with Expanded
+          ] else ...[
+            _sortedSearchBar(),
+            SizedBox(
+                height: 10), // Add space between the search bar and the list
+            Expanded(
+                child:
+                    _buildPatientsSortedList()), // Wrap ListView with Expanded
+          ],
+        ],
+      ),
+      bottomNavigationBar: _bottomNav(),
+    );
+  }
 }

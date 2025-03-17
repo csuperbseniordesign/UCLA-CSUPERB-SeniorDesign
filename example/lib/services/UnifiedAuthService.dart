@@ -17,7 +17,8 @@ class UnifiedAuthService {
 
   // Add these at the top of the class with other static variables
   static DateTime? _lastLoginAttempt;
-  static const Duration _minLoginInterval = Duration(seconds: 30); // More conservative rate limit
+  static const Duration _minLoginInterval =
+      Duration(seconds: 30); // More conservative rate limit
   static Map<String, dynamic> _loginCache = {};
 
   // Converts Firebase User to custom AppUser
@@ -120,48 +121,48 @@ class UnifiedAuthService {
   late final String? selectedPhysicianUid;
 
   Future<List<DropdownMenuItem<String>>> getPhysicianDropdownItems() async {
-  List<DropdownMenuItem<String>> items = [];
-  DatabaseReference ref = FirebaseDatabase.instance.ref('physicians');
+    List<DropdownMenuItem<String>> items = [];
+    DatabaseReference ref = FirebaseDatabase.instance.ref('physicians');
 
-  try {
-    DatabaseEvent event = await ref.once();
+    try {
+      DatabaseEvent event = await ref.once();
 
-    // Debugging: Check if data exists
-    if (!event.snapshot.exists) {
-      print("No data found at 'physicians' node.");
-      return items;
+      // Debugging: Check if data exists
+      if (!event.snapshot.exists) {
+        print("No data found at 'physicians' node.");
+        return items;
+      }
+
+      print("Raw snapshot value: ${event.snapshot.value}");
+
+      Map<dynamic, dynamic> physicians =
+          event.snapshot.value as Map<dynamic, dynamic>;
+
+      physicians.forEach((key, value) {
+        // Debugging: Check each entry
+        print("Processing physician: $key -> $value");
+
+        // Ensure value contains expected fields
+        if (value is Map &&
+            value.containsKey('firstName') &&
+            value.containsKey('lastName')) {
+          String fullName = '${value['firstName']} ${value['lastName']}';
+          items.add(
+            DropdownMenuItem(
+              value: key,
+              child: Text(fullName),
+            ),
+          );
+        } else {
+          print("Skipping invalid physician entry: $key -> $value");
+        }
+      });
+    } catch (e) {
+      print("Error fetching physicians: $e");
     }
 
-    print("Raw snapshot value: ${event.snapshot.value}");
-
-    Map<dynamic, dynamic> physicians =
-        event.snapshot.value as Map<dynamic, dynamic>;
-
-    physicians.forEach((key, value) {
-      // Debugging: Check each entry
-      print("Processing physician: $key -> $value");
-
-      // Ensure value contains expected fields
-      if (value is Map && value.containsKey('firstName') && value.containsKey('lastName')) {
-        String fullName = '${value['firstName']} ${value['lastName']}';
-        items.add(
-          DropdownMenuItem(
-            value: key,
-            child: Text(fullName),
-          ),
-        );
-      } else {
-        print("Skipping invalid physician entry: $key -> $value");
-      }
-    });
-
-  } catch (e) {
-    print("Error fetching physicians: $e");
+    return items;
   }
-
-  return items;
-}
-
 
   Future<List<DropdownMenuItem<String>>> getPhysicianDropdownMenu(
       String currentPhysicianId) async {
@@ -286,28 +287,29 @@ class UnifiedAuthService {
         if (data != null && data.containsKey('deviceToken')) {
           final String? deviceToken = data['deviceToken'];
           print("Device token for UID $uid is: $deviceToken");
-          
+
           // Try to login and get access token
           var loginResponse = await login(deviceToken, instanceId: instanceId);
-          
+
           if (loginResponse != null) {
             if (isNewUser) {
               _trackingApi.showPermissionWizard(
                   enableAggressivePermissionsWizard: false,
                   enableAggressivePermissionsWizardPage: true);
             }
-            
+
             // Update tokens in Firebase if they were returned
             if (loginResponse['Result'] != null) {
-              String newAccessToken = loginResponse['Result']['AccessToken']['Token'];
+              String newAccessToken =
+                  loginResponse['Result']['AccessToken']['Token'];
               String newRefreshToken = loginResponse['Result']['RefreshToken'];
-              
+
               await FirebaseDatabase.instance.ref('patients/$uid').update({
                 'accessToken': newAccessToken,
                 'refreshToken': newRefreshToken,
               });
             }
-            
+
             await initializeAndStartTracking(deviceToken!);
             return deviceToken;
           } else {
@@ -321,7 +323,8 @@ class UnifiedAuthService {
         print("Snapshot does not exist for UID $uid.");
       }
     } catch (e) {
-      print("An error occurred while trying to fetch device token for UID $uid: $e");
+      print(
+          "An error occurred while trying to fetch device token for UID $uid: $e");
     }
 
     return null;
@@ -452,7 +455,9 @@ class UnifiedAuthService {
   }
 
   // Method to login to Damoov with proper headers and rate limiting
-  Future<Map<String, dynamic>?> login(String? userId, {required String instanceId}) async {
+  Future<Map<String, dynamic>?> login(String? userId,
+      {required String instanceId}) async {
+    String instanceKey = await fireFetch('InstanceKey').toString();
     if (userId == null) {
       print("User ID is null. Cannot login.");
       return null;
@@ -469,7 +474,8 @@ class UnifiedAuthService {
     if (_lastLoginAttempt != null) {
       final timeSinceLastLogin = DateTime.now().difference(_lastLoginAttempt!);
       if (timeSinceLastLogin < _minLoginInterval) {
-        print('Too many login attempts. Please wait ${_minLoginInterval.inSeconds} seconds.');
+        print(
+            'Too many login attempts. Please wait ${_minLoginInterval.inSeconds} seconds.');
         return null;
       }
     }
@@ -479,9 +485,11 @@ class UnifiedAuthService {
       var url = Uri.parse('https://user.telematicssdk.com/v1/Auth/Login');
 
       // Get the instance key
-      String? instanceKey = await fireFetch('InstanceKey');
+
+      print("Instance ID in auth service + $instanceId");
+      print("InstanceKey in auth service + $instanceKey");
       if (instanceKey == null) {
-        print("Failed to get instance key");
+        print("Failed to get instance key in auth login");
         return null;
       }
 
@@ -489,23 +497,16 @@ class UnifiedAuthService {
         'accept': 'application/json',
         'content-type': 'application/json',
         'InstanceId': instanceId,
-        'User-Agent': 'EyeMyWay-App/1.0',  // Add user agent
-        'Origin': 'https://user.telematicssdk.com',  // Add origin
-        'Referer': 'https://user.telematicssdk.com/',  // Add referer
       };
 
       var body = jsonEncode({
         'LoginFields': {"Devicetoken": userId},
-        'Password': instanceKey  // Use the instance key from Firestore
+        'Password': instanceKey // Use the instance key from Firestore
       });
 
       print("Attempting login with device token: ${userId.substring(0, 5)}...");
-      var response = await http.post(
-        url, 
-        headers: headers, 
-        body: body
-      ).timeout(
-        Duration(seconds: 10),  // Add timeout
+      var response = await http.post(url, headers: headers, body: body).timeout(
+        Duration(seconds: 10), // Add timeout
         onTimeout: () {
           print("Login request timed out");
           throw TimeoutException('Login request timed out');
@@ -515,10 +516,10 @@ class UnifiedAuthService {
       if (response.statusCode == 200) {
         print("Login successful");
         Map<String, dynamic> data = jsonDecode(response.body);
-        
+
         // Cache the successful response
         _loginCache[cacheKey] = data;
-        
+
         return data;
       } else {
         print('Failed to login, status code: ${response.statusCode}');
@@ -618,23 +619,24 @@ class UnifiedAuthService {
   // accumulated totals
   Future<List<String>> fetchStatistics(String authToken) async {
     var client = http.Client();
-    List<String> statistics = ['0', '0', '0'];  // Default values
-    
+    List<String> statistics = ['0', '0', '0']; // Default values
+
     try {
       // Get current date for the date range
       DateTime now = DateTime.now();
       DateTime thirtyDaysAgo = now.subtract(Duration(days: 30));
-      
+
       String startDate = thirtyDaysAgo.toIso8601String().split('T')[0];
       String endDate = now.toIso8601String().split('T')[0];
 
       print("Fetching statistics from $startDate to $endDate");
-      
-      var url = Uri.parse('https://api.telematicssdk.com/indicators/v2/statistics')
-          .replace(queryParameters: {
-            'startDate': startDate,
-            'endDate': endDate
-          });
+
+      var url =
+          Uri.parse('https://api.telematicssdk.com/indicators/v2/statistics')
+              .replace(queryParameters: {
+        'startDate': startDate,
+        'endDate': endDate
+      });
 
       print("Making request to: $url");
       final response = await client.get(
@@ -650,21 +652,23 @@ class UnifiedAuthService {
       if (response.statusCode == 200) {
         Map<String, dynamic> data = jsonDecode(response.body);
         if (data["Result"] != null) {
-          String tripCount = (data["Result"]["DriverTripsCount"] ?? 0).toString();
-          
+          String tripCount =
+              (data["Result"]["DriverTripsCount"] ?? 0).toString();
+
           double mileage = (data["Result"]["MileageMile"] ?? 0).toDouble();
           String totalMiles = mileage.toStringAsPrecision(4);
-          
+
           double time = (data["Result"]["DrivingTime"] ?? 0).toDouble();
           String drivingTime = time.toStringAsPrecision(4);
-          
+
           statistics = [tripCount, totalMiles, drivingTime];
           print("Successfully fetched statistics: $statistics");
         } else {
           print("No result data in response");
         }
       } else {
-        print('Failed to fetch statistics, status code: ${response.statusCode}');
+        print(
+            'Failed to fetch statistics, status code: ${response.statusCode}');
         print('Response body: ${response.body}');
       }
     } catch (e) {
@@ -698,11 +702,25 @@ class UnifiedAuthService {
       if (response.statusCode == 200) {
         Map<String, dynamic> data = jsonDecode(response.body);
         if (data["Result"] != null) {
-          accelerationScore = double.parse(data["Result"]["AccelerationScore"].toString()).round().toString();
-          brakingScore = double.parse(data["Result"]["BrakingScore"].toString()).round().toString();
-          speedingScore = double.parse(data["Result"]["SpeedingScore"].toString()).round().toString();
-          corneringScore = double.parse(data["Result"]["CorneringScore"].toString()).round().toString();
-          phoneScore = double.parse(data["Result"]["PhoneUsageScore"].toString()).round().toString();
+          accelerationScore =
+              double.parse(data["Result"]["AccelerationScore"].toString())
+                  .round()
+                  .toString();
+          brakingScore = double.parse(data["Result"]["BrakingScore"].toString())
+              .round()
+              .toString();
+          speedingScore =
+              double.parse(data["Result"]["SpeedingScore"].toString())
+                  .round()
+                  .toString();
+          corneringScore =
+              double.parse(data["Result"]["CorneringScore"].toString())
+                  .round()
+                  .toString();
+          phoneScore =
+              double.parse(data["Result"]["PhoneUsageScore"].toString())
+                  .round()
+                  .toString();
         } else {
           accelerationScore = "n/a";
           brakingScore = "n/a";
@@ -878,7 +896,8 @@ class UnifiedAuthService {
     }
   }
 
-  static Future<Map<String, String>?> refreshAccessToken(String refreshToken) async {
+  static Future<Map<String, String>?> refreshAccessToken(
+      String refreshToken) async {
     var client = http.Client();
     try {
       var url = Uri.parse('https://api.telematicssdk.com/auth/refresh');
@@ -896,10 +915,12 @@ class UnifiedAuthService {
         Map<String, dynamic> data = jsonDecode(response.body);
         return {
           'access_token': data['access_token'] ?? '',
-          'refresh_token': data['refresh_token'] ?? refreshToken,  // Keep old refreshToken if new one is not provided
+          'refresh_token': data['refresh_token'] ??
+              refreshToken, // Keep old refreshToken if new one is not provided
         };
       } else {
-        print('Failed to refresh token: ${response.statusCode}, response: ${response.body}');
+        print(
+            'Failed to refresh token: ${response.statusCode}, response: ${response.body}');
         return null;
       }
     } catch (e) {
@@ -918,14 +939,17 @@ class UnifiedAuthService {
     });
   }
 
-  // Add this method to handle token refresh
-  Future<Map<String, dynamic>?> refreshToken(String refreshToken, String instanceId) async {
-    print("\n=== Starting Token Refresh Process ===");
-    print("Using refresh token: ${refreshToken.length > 10 ? refreshToken.substring(0, 10) + '...' : refreshToken}");
-    print("Instance ID: $instanceId");
-    
+  // Add this method to handle token retrieval by using auth to check current auth and refresh token
+  // does not use the refresh access token as once it expires the refresh token does not work
+  Future<Map<String, dynamic>?> refreshToken(
+      String deviceToken,
+      String instanceId,
+      String instanceKey,
+      String? currentRefreshToken) async {
+    print("\n=== Starting Token Retrieval Process in Auth===");
+
     try {
-      var url = Uri.parse('https://user.telematicssdk.com/v1/Auth/RefreshToken');
+      var url = Uri.parse('https://user.telematicssdk.com/v1/Auth/Login');
 
       var headers = {
         'accept': 'application/json',
@@ -935,26 +959,17 @@ class UnifiedAuthService {
 
       print("Request headers: $headers");
 
-      // Get the instance key for authentication
-      String? instanceKey = await fireFetch('InstanceKey');
-      if (instanceKey == null) {
-        print("Failed to get instance key");
-        return null;
-      }
-
-      // According to Damoov docs, we only need to send the refresh token
       var body = jsonEncode({
-        'RefreshToken': refreshToken
+        'LoginFields': {'Devicetoken': deviceToken},
+        'Password': instanceKey.toString()
       });
 
       print("Sending refresh token request...");
       print("Request URL: $url");
-      
-      var response = await http.post(
-        url, 
-        headers: headers, 
-        body: body
-      ).timeout(
+      print("instanceId + $instanceId");
+      print("instanceKey + $instanceKey");
+
+      var response = await http.post(url, headers: headers, body: body).timeout(
         Duration(seconds: 10),
         onTimeout: () {
           print("Refresh token request timed out");
@@ -963,16 +978,17 @@ class UnifiedAuthService {
       );
 
       print("Response status code: ${response.statusCode}");
-      print("Response headers: ${response.headers}");
-      
+      print("Response body: ${response.body}");
+
       if (response.statusCode == 200) {
         Map<String, dynamic> data = jsonDecode(response.body);
         // According to Damoov docs, check for Result.AccessToken and Result.RefreshToken
-        if (data['Result'] != null && 
-            data['Result']['AccessToken'] != null && 
+        if (data['Result'] != null &&
+            data['Result']['AccessToken'] != null &&
             data['Result']['RefreshToken'] != null) {
           print("Token refresh successful!");
-          print("New access token will expire in: ${data['Result']['AccessToken']['ExpiresIn']} seconds");
+          print(
+              "New access token will expire in: ${data['Result']['AccessToken']['ExpiresIn']} seconds");
           return data;
         } else {
           print("Unexpected response format");
@@ -999,19 +1015,27 @@ class UnifiedAuthService {
   }
 
   // Update the fetchSummarySafetyScore method to use the refresh token
-  Future<String> fetchSummarySafetyScore(
-    String startDate, String endDate, String authToken, String deviceToken) async {
+  Future<String> fetchSummarySafetyScore(String startDate, String endDate,
+      String authToken, String deviceToken) async {
     var client = http.Client();
     String statistics = '';
     String? instanceId = await fireFetch('InstanceId');
+    String? instanceKey = await fireFetch('InstanceKey').toString();
 
     try {
-      var url = Uri.parse('https://api.telematicssdk.com/indicators/v2/Scores/safety')
-          .replace(queryParameters: {'StartDate': startDate, 'EndDate': endDate});
+      var url =
+          Uri.parse('https://api.telematicssdk.com/indicators/v2/Scores/safety')
+              .replace(queryParameters: {
+        'StartDate': startDate,
+        'EndDate': endDate
+      });
 
       final response = await client.get(
         url,
-        headers: {'accept': 'application/json', 'authorization': 'Bearer $authToken'},
+        headers: {
+          'accept': 'application/json',
+          'authorization': 'Bearer $authToken'
+        },
       );
 
       if (response.statusCode == 200) {
@@ -1032,14 +1056,20 @@ class UnifiedAuthService {
 
             if (currentRefreshToken != null) {
               // Try to refresh the token
-              var refreshResponse = await refreshToken(currentRefreshToken, instanceId);
-              
-              if (refreshResponse != null && refreshResponse['Result'] != null) {
-                String newAccessToken = refreshResponse['Result']['AccessToken']['Token'];
-                String newRefreshToken = refreshResponse['Result']['RefreshToken'];
-                
+              var refreshResponse = await refreshToken(
+                  deviceToken, instanceId, instanceKey, null);
+
+              if (refreshResponse != null &&
+                  refreshResponse['Result'] != null) {
+                String newAccessToken =
+                    refreshResponse['Result']['AccessToken']['Token'];
+                String newRefreshToken =
+                    refreshResponse['Result']['RefreshToken'];
+
                 // Update tokens in Firebase
-                await FirebaseDatabase.instance.ref('patients/$deviceToken').update({
+                await FirebaseDatabase.instance
+                    .ref('patients/$deviceToken')
+                    .update({
                   'accessToken': newAccessToken,
                   'refreshToken': newRefreshToken,
                 });
@@ -1049,19 +1079,25 @@ class UnifiedAuthService {
                 // Retry API call with new token
                 final retryResponse = await client.get(
                   url,
-                  headers: {'accept': 'application/json', 'authorization': 'Bearer $newAccessToken'},
+                  headers: {
+                    'accept': 'application/json',
+                    'authorization': 'Bearer $newAccessToken'
+                  },
                 );
 
                 if (retryResponse.statusCode == 200) {
-                  Map<String, dynamic> retryData = jsonDecode(retryResponse.body);
-                  statistics = retryData["Result"]?["SafetyScore"]?.toString() ?? "0";
+                  Map<String, dynamic> retryData =
+                      jsonDecode(retryResponse.body);
+                  statistics =
+                      retryData["Result"]?["SafetyScore"]?.toString() ?? "0";
                 } else {
                   print("Error retrying with new token: ${retryResponse.body}");
                 }
               } else {
                 print("Failed to refresh token, falling back to login");
                 // Only fall back to login if refresh token fails
-                var loginResponse = await login(deviceToken, instanceId: instanceId);
+                var loginResponse =
+                    await login(deviceToken, instanceId: instanceId);
                 // ... rest of the login logic ...
               }
             }
