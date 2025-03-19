@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:telematics_sdk_example/screens/physicianUI/physician_home_screen.dart';
 import 'package:telematics_sdk_example/services/UnifiedAuthService.dart';
 import 'package:flutter_pw_validator/flutter_pw_validator.dart';
+import 'package:telematics_sdk_example/widgets/show_dialog.dart';
 
 class PhysicianSignInScreen extends StatefulWidget {
   const PhysicianSignInScreen({Key? key}) : super(key: key);
@@ -376,7 +377,7 @@ class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
         child: TextField(
           controller: controller,
           focusNode: focusNode,
-          cursorColor:  Color.fromARGB(255, 103, 139, 183),
+          cursorColor: Color.fromARGB(255, 103, 139, 183),
           // autofocus: false,
           decoration: InputDecoration(
             hintText: title,
@@ -434,20 +435,24 @@ class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
           width: 300,
           child: TextFormField(
             controller: _controllerConfirmPassword,
-            cursorColor:  Color.fromARGB(255, 103, 139, 183),
+            cursorColor: Color.fromARGB(255, 103, 139, 183),
             obscureText: true,
             decoration: const InputDecoration(
               hintText: 'CONFIRM PASSWORD',
               focusedBorder: UnderlineInputBorder(
-              borderSide:
-                  BorderSide(color: const Color.fromARGB(255, 4, 27, 63)),
-            ),
+                borderSide:
+                    BorderSide(color: const Color.fromARGB(255, 4, 27, 63)),
+              ),
             ),
             validator: (String? value) {
               if (value == null || value.isEmpty) {
+                showLoginDialog(
+                    context, "Login Failed", "Password Field is empty");
                 return 'Please re-enter password';
               }
               if (_controllerPassword.text != _controllerConfirmPassword.text) {
+                showLoginDialog(
+                    context, "Login Failed", "Email or Password is incorrect");
                 return "Password does not match";
               }
               return null;
@@ -486,7 +491,7 @@ class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
         // print('Password reset email sent to $email');
       } catch (e) {
         // print('Failed to reset password: $e');
-         _snackBar("Failed to reset password $e");
+        _snackBar("Failed to reset password $e");
         // Handle the error appropriately, such as displaying an error message
       }
     } else {
@@ -496,10 +501,10 @@ class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
     }
   }
 
-    void _snackBar(String error) {
+  void _snackBar(String error) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
   }
-  
+
   Widget _submitButton() {
     return Padding(
       padding: const EdgeInsets.only(top: 30, left: 25, right: 20),
@@ -574,6 +579,8 @@ class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
         //   // Stop loading
         setState(() => isLoading = false);
       } else {
+        showLoginDialog(
+            context, "Login Failed", "Email or Password is incorrect");
         throw Exception(
             'Failed to sign in. Please check your email and password.');
       }
@@ -585,7 +592,7 @@ class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
     }
   }
 
-Widget _loginOrRegisterButton() {
+  Widget _loginOrRegisterButton() {
     return Padding(
       padding: const EdgeInsets.only(top: 20, right: 100),
       // Link to change to sign up/sign in page
@@ -625,6 +632,7 @@ Widget _loginOrRegisterButton() {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
           // _decoration(),
@@ -657,7 +665,6 @@ Widget _loginOrRegisterButton() {
                 _submitButton(),
                 _loginOrRegisterButton(),
               ] else ...[
-                Padding(padding: const EdgeInsets.only(bottom: 105)),
                 _entryField('EMAIL', _controllerEmail),
                 _entryField('PASSWORD', _controllerPassword,
                     focusNode: _passwordFocusNode),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'package:telematics_sdk_example/services/UnifiedAuthService.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -246,12 +245,12 @@ class _PatientTripsScreenState extends State<PatientTripsScreen> {
     try {
       var items = await fetchTrips(this.token, this.tripCount);
       if (items.isNotEmpty) {
-          // setState(() {
+        // setState(() {
         trips = items;
         for (int i = 0; i < tripCount; i++) {
           // setState(() {
           // containers.add(Container(
-            temp.add(Container(
+          temp.add(Container(
             color: Color.fromARGB(255, 238, 235, 235),
             margin: EdgeInsets.all(10),
             child: Column(
@@ -268,7 +267,6 @@ class _PatientTripsScreenState extends State<PatientTripsScreen> {
                     )
                   ]),
                   Row(children: <Widget>[
-                 
                     Text(
                       startDates[i].toString() +
                           " to " +
@@ -434,7 +432,6 @@ class _PatientTripsScreenState extends State<PatientTripsScreen> {
                 ]),
           ));
           // });
-    
         }
         setState(() {
           containers = temp;

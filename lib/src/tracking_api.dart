@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:ffi';
 
 import 'package:flutter/services.dart';
 import 'package:telematics_sdk/src/data/api_language.dart';
@@ -37,9 +36,6 @@ class TrackingApi {
       _handler.onPermissionWizardClose;
   Stream<bool> get lowerPowerMode => _handler.lowerPowerMode;
   Stream<TrackLocation> get locationChanged => _handler.locationChanged;
-  //Stream<bool> get newEvents => _handler.newEvents; //TO DO
-  // Stream<bool> get wrongAccuracyAuthorization =>   //TO DO
-  //     _handler.wrongAccuracyAuthorization;
   Stream<bool> get trackingStateChanged => _handler.trackingStateChanged;
   Stream<String> get logEvent => _handler.logEvent;
   Stream<String> get logWarning => _handler.logWarning;

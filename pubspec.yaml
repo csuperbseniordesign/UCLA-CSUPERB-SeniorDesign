@@ -6,8 +6,8 @@ repository: https://github.com/Mobile-Telematics/telematicsSDK-demoapp-flutter-
 issue_tracker: https://github.com/Mobile-Telematics/telematicsSDK-demoapp-flutter-/issues
 
 dependencies:
-  firebase_core: ^2.13.1
-  firebase_auth: ^4.17.3
+  firebase_core: ^3.6.0
+  firebase_auth: ^5.3.1
   flutter:
     sdk: flutter
 

@@ -4,14 +4,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:telematics_sdk_example/screens/welcome_screen.dart';
 import 'package:telematics_sdk_example/services/auth.dart';
 import 'package:telematics_sdk_example/screens/patientUI/settings/patient_profile_screen.dart';
-// import 'package:telematics_sdk_example/screens/tutorial_screen.dart';
 import 'package:telematics_sdk_example/screens/patientUI/patient_home_screen.dart';
 import 'package:telematics_sdk_example/screens/patientUI/settings/about_app_screen.dart';
 import 'package:telematics_sdk_example/screens/patientUI/settings/privacy_policy_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:telematics_sdk/telematics_sdk.dart';
-
-// var _deviceId = virtualDeviceToken;
 
 final User? user = Auth().currentUser;
 var uid;
@@ -100,14 +97,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             dense: true,
           ),
-          // ListTile(
-          //   leading: Icon(Icons.menu_book),
-          //   title: Text('Tutorial'),
-          //   trailing: Icon(Icons.arrow_forward_ios),
-          //   onTap: () {
-          //     Navigator.of(context).push(TutorialHome());
-          //   },
-          // ),
           ListTile(
             leading: Icon(Icons.info_outline),
             title: Text('About App'),
@@ -144,7 +133,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               await _trackingApi.clearDeviceID();
 
               // new
-              print('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
               _trackingApi.setEnableSdk(enable: false);
               print('sdk disabled');
               _trackingApi.setDisableTracking(value: true);
