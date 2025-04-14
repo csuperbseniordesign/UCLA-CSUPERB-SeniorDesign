@@ -458,6 +458,7 @@ class UnifiedAuthService {
   Future<Map<String, dynamic>?> login(String? userId,
       {required String instanceId}) async {
     String instanceKey = await fireFetch('InstanceKey').toString();
+
     if (userId == null) {
       print("User ID is null. Cannot login.");
       return null;

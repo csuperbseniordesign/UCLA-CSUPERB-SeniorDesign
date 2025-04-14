@@ -429,7 +429,7 @@ class _PatientHomeScreenState extends State<PatientHomeScreen>
           //     ? Text(
           //         'Tracking: ${_isSdkEnabled && _isTracking && _isAllRequiredPermissionsGranted ? 'Enabled' : 'Disabled'}')
           //     : SizedBox.shrink(),
-          Text(_getCurrentLocation()),
+          //Text(_getCurrentLocation()),
           _sizedBoxSpace,
           Text(
             'Tracking Status',
