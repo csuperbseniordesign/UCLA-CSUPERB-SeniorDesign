@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:telematics_sdk_example/screens/patientUI/patient_home_screen.dart';
 import 'package:telematics_sdk_example/services/UnifiedAuthService.dart';
 import 'package:flutter_pw_validator/flutter_pw_validator.dart';
+import 'package:telematics_sdk_example/screens/patientUI/consent_form_screen.dart';
 
 const String virtualDeviceToken = '';
 
@@ -373,42 +374,27 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
       {required String instanceId, required String instanceKey}) async {
     try {
       setState(() => isLoading = true);
-      // register user in FireBase w/ filled out fields
-      AppUser? user = await _auth.registerPatient(
-          email: _controllerEmail.text,
-          password: _controllerPassword.text,
-          gender: "",
-          birthday: "",
-          physician: physician,
-          physicianID: physicianUid!,
-          instanceId: instanceId,
-          instanceKey: instanceKey);
-      print(physician);
-      // if registration is successful, grab device token
-      if (user != null) {
-        String? deviceToken = await _auth.getDeviceTokenForUser(user.uid, true,
-            instanceId: instanceId);
-
-        if (!mounted) return;
-        // use the device token to login - needed for tracking
-        await _auth.login(user.uid, instanceId: instanceId);
-
-        if (!mounted) return;
-        // Perform the role check after successful sign-in
-        String role = await _auth.checkUserRole(user.uid!);
-        if (role == 'Patient') {
-          Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => PatientHomeScreen()));
-        }
-        // Stop loading
-        setState(() => isLoading = false);
-      } else {
-        throw Exception(
-            'Failed to sign in. Please check your email and password.');
-      }
-    } on FirebaseAuthException catch (e) {
+      
+      // Navigate to consent form instead of directly creating account
+      if (!mounted) return;
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => ConsentFormScreen(
+            email: _controllerEmail.text,
+            password: _controllerPassword.text,
+            physician: physician,
+            physicianUid: physicianUid!,
+            instanceId: instanceId,
+            instanceKey: instanceKey,
+          ),
+        ),
+      );
+      
+      setState(() => isLoading = false);
+    } catch (e) {
       setState(() {
-        errorMessage = e.message;
+        errorMessage = e.toString();
+        isLoading = false;
       });
     }
   }

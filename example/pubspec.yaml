@@ -16,6 +16,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_local_notifications: ^18.0.1
+  signature: ^5.4.0
 
   telematics_sdk:
     path: ../
