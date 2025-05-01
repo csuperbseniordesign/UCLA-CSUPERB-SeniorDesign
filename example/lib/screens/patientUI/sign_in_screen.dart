@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:telematics_sdk_example/services/alert_user.dart';
 import 'package:telematics_sdk_example/services/fire_fetch.dart';
 import 'package:telematics_sdk_example/services/user.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -8,6 +7,8 @@ import 'package:telematics_sdk_example/screens/patientUI/patient_home_screen.dar
 import 'package:telematics_sdk_example/services/UnifiedAuthService.dart';
 import 'package:flutter_pw_validator/flutter_pw_validator.dart';
 import 'package:telematics_sdk_example/widgets/show_dialog.dart';
+import 'package:telematics_sdk_example/screens/patientUI/consent_form_screen.dart';
+
 
 const String virtualDeviceToken = '';
 
@@ -51,6 +52,8 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
   void loadPhysicians() async {
     try {
       var items = await _auth.getPhysicianDropdownItems();
+      print("Physician items loaded: $items"); // Debugging print
+
       setState(() {
         physicianItems = items;
         if (items.isNotEmpty && physicianUid == null) {
@@ -333,19 +336,21 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
         width: 350,
         child: FilledButton(
           onPressed: () async {
-            // get instanceId and check if it's not null
             String? instanceId = await fireFetch('InstanceId');
+
             if (instanceId == null) {
+
               // if it's null, show user network pop up
               AlertUser.show(context,
                   title: 'Unable to connect to firebase',
                   description: 'Please check your network connection');
 
               return;
+
             }
 
-            // if user is logging in
             if (isLogin) {
+
               // then call the sign in function
               try {
                 await _signIn(instanceId: instanceId);
@@ -354,10 +359,12 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
                 showLoginDialog(
                     context, "Login Failed", "Email or Password is incorrect");
               }
+              
             } else {
-              // get instanceKey and check if it's null
               String? instanceKey = await fireFetch('InstanceKey');
+
               if (instanceKey == null) {
+                print('Error: instanceKey is null');
                 return;
               }
 
@@ -388,47 +395,27 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
       {required String instanceId, required String instanceKey}) async {
     try {
       setState(() => isLoading = true);
-      // register user in FireBase w/ filled out fields
-      AppUser? user = await _auth.registerPatient(
-          email: _controllerEmail.text,
-          password: _controllerPassword.text,
-          gender: "",
-          birthday: "",
-          physician: physician,
-          physicianID: physicianUid!,
-          instanceId: instanceId,
-          instanceKey: instanceKey);
-      print(physician);
-      // if registration is successful, grab device token
-      if (user != null) {
-        String? deviceToken = await _auth.getDeviceTokenForUser(user.uid, true,
-            instanceId: "5ad66859-5074-4a69-8593-5f46a0d1aa39");
-
-        if (!mounted) return;
-        // use the device token to login - needed for tracking
-        if (deviceToken != null) {
-          await _auth.login(deviceToken,
-              instanceId: "5ad66859-5074-4a69-8593-5f46a0d1aa39");
-
-          if (!mounted) return;
-          // Perform the role check after successful sign-in
-          String role = await _auth.checkUserRole(user.uid!);
-          if (role == 'Patient') {
-            Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (context) => PatientHomeScreen()));
-          }
-          // Stop loading
-          setState(() => isLoading = false);
-        } else {
-          throw Exception('Device token could not be retrieved.');
-        }
-      } else {
-        throw Exception(
-            'Failed to sign in. Please check your email and password.');
-      }
-    } on FirebaseAuthException catch (e) {
+      
+      // Navigate to consent form instead of directly creating account
+      if (!mounted) return;
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => ConsentFormScreen(
+            email: _controllerEmail.text,
+            password: _controllerPassword.text,
+            physician: physician,
+            physicianUid: physicianUid!,
+            instanceId: instanceId,
+            instanceKey: instanceKey,
+          ),
+        ),
+      );
+      
+      setState(() => isLoading = false);
+    } catch (e) {
       setState(() {
-        errorMessage = e.message;
+        errorMessage = e.toString();
+        isLoading = false;
       });
     }
   }
@@ -451,14 +438,12 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
           // if it is a patient grab the token & login
           String? deviceToken = await _auth
               .getDeviceTokenForUser(user.uid, false, instanceId: instanceId);
-          if (deviceToken != null) {
-            await _auth.login(deviceToken, instanceId: instanceId);
+          await _auth.login(user.uid, instanceId: instanceId);
 
-            if (!mounted) return;
-            Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (context) => PatientHomeScreen()));
-            // Stop loading
-          }
+          if (!mounted) return;
+          Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => PatientHomeScreen()));
+          // Stop loading
           setState(() => isLoading = false);
         } else if (role == 'Physician') {
           // If the role is Physician, but this sign-in method is for Patients,

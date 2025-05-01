@@ -1,325 +1,13 @@
-// import 'package:flutter/material.dart';
-// import 'package:telematics_sdk_example/screens/physicianUI/patient_display_screen.dart';
-// import 'dart:convert';
-// import 'package:http/http.dart' as http;
-// import 'package:telematics_sdk_example/screens/physicianUI/physician_settings_screen.dart';
-// import 'package:telematics_sdk_example/screens/physicianUI/physician_tutorial_screen.dart';
-// import 'package:firebase_auth/firebase_auth.dart';
-// import 'package:firebase_database/firebase_database.dart';
-// import "dart:collection";
-// const _sizedBoxSpace = SizedBox(height: 24);
-
-// class PhysicianHomeScreen extends StatefulWidget {
-//   PhysicianHomeScreen({Key? key}) : super(key: key);
-
-//   @override
-//   _PhysicianHomeScreenState createState() => _PhysicianHomeScreenState();
-// }
-
-// class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
-//   String docName = "";
-//   User? currentUser = FirebaseAuth.instance.currentUser;
-//   Map<String, String> patientList = {};
-//   List<String> summaryScores = [];
-
-//   @override
-//   void initState() {
-//     // super.initState();
-//     loadPatients();
-//     super.initState();
-//     // _listItems();
-//   }
-
-//   Future<Map<String, String>> getPatients() async {
-//     List<String> emails = [];
-//     List<String> accessTokens = [];
-//     Map<String, String> patientList = <String, String>{};
-
-//     DatabaseReference ref = FirebaseDatabase.instance.ref('patients');
-//     User? currentUser = FirebaseAuth.instance.currentUser;
-
-//     if (currentUser != null) {
-//       String uid = currentUser.uid;
-//       try {
-//         DatabaseEvent event = await ref.once();
-//         Map<dynamic, dynamic> patients =
-//             event.snapshot.value as Map<dynamic, dynamic>;
-
-//         patients.forEach((key, value) async {
-//           String patientAT = '${value['accessToken']}';
-//           String patientEmail = '${value['email']}';
-
-//           if ('${value['physicianID']}' == uid) {
-//             accessTokens.add(patientAT);
-//             emails.add(patientEmail);
-//           }
-//         });
-
-//         patientList = Map.fromIterables(emails, accessTokens);
-//       SplayTreeMap<String, String> sortedList =
-//       SplayTreeMap<String,String>.from(patientList);
-//       patientList = sortedList;
-
-//       } catch (e) {
-//         print(e.toString());
-//         // Handle errors or return an empty list
-//       }
-//     }
-//     setState(() {});
-//     return patientList;
-//   }
-
-//   Future<String> fetchSummarySafetyScore(
-//       String startDate, String endDate, String authToken) async {
-//     var client = http.Client();
-//     String statistics = '';
-//     try {
-//       var url =
-//           Uri.parse('https://api.telematicssdk.com/indicators/v2/Scores/safety')
-//               .replace(queryParameters: {
-//         'StartDate': startDate,
-//         'EndDate': endDate,
-//       });
-
-//       final response = await client.get(
-//         url,
-//         headers: {
-//           'accept': 'application/json',
-//           'authorization': 'Bearer $authToken',
-//         },
-//       );
-//       if (response.statusCode == 200) {
-//         Map<String, dynamic> data = jsonDecode(response.body);
-//         if (data["Result"] != null) {
-//           statistics = data["Result"]["SafetyScore"].toString();
-//         } else {
-//           statistics = "0";
-//         }
-//       } else {
-//         print(
-//             'Failed to fetch daily statistics, status code: ${response.statusCode}, response: ${response.body}');
-//       }
-//     } catch (e) {
-//       print('Error fetching daily statistics: $e');
-//     } finally {
-//       client.close();
-//     }
-//     setState(() {});
-//     return statistics;
-//   }
-
-//   String patients = "";
-//   String summaryScore = "";
-//   List<ListTile> patientsAndScores = [];
-
-//   void loadPatients() async {
-//   ListTile tile;
-//   try {
-//     var items = await getPatients();
-//     patientList = items;
-//     List<ListTile> tempPatientsAndScores = [];
-
-//     if (items.isNotEmpty) {
-//       List<String> keys = items.keys.toList();
-//       for (var i = 0; i < keys.length; i++) {
-//         String key = keys[i];
-//         String value = items[key]!;
-//         summaryScore =
-//             await fetchSummarySafetyScore("2024-01-01", "2024-10-10", value);
-
-//         if (summaryScore.isNotEmpty) {
-//           summaryScores.add(summaryScore);
-//           double s = double.parse(summaryScore);
-//           if (s >= 80 && s < 101) {
-//             tile = new ListTile(
-//                 tileColor: Color.fromARGB(255, 68, 125, 171),
-//                 title: Text(key),
-//                 subtitle: Text("Summary Score: " + summaryScore),
-//                 onTap: () {
-//                   Navigator.of(context).push(MaterialPageRoute(
-//                       builder: (context) => PatientDisplayScreen(key, value)));
-//                 },
-//                 shape: Border(
-//                   bottom: BorderSide(color: Colors.black),
-//                 ));
-//           } else if (s >= 60 && s < 80) {
-//             tile = new ListTile(
-//                 tileColor: Color.fromARGB(255, 106, 121, 134),
-//                 title: Text(key),
-//                 subtitle: Text("Summary Score: " + summaryScore),
-//                 shape: Border(
-//                   bottom: BorderSide(color: Colors.black),
-//                 ));
-//           } else if (s == 0) {
-//             tile = new ListTile(
-//                 tileColor: Color.fromARGB(255, 189, 189, 198),
-//                 title: Text(key),
-//                 subtitle: Text("Summary Score: -"),
-//                 shape: Border(
-//                   bottom: BorderSide(color: Colors.black),
-//                 ));
-//           } else {
-//             tile = new ListTile(
-//                 tileColor: Color.fromARGB(255, 249, 0, 0),
-//                 title: Text(key),
-//                 subtitle: Text("Summary Score: " + summaryScore),
-//                 shape: Border(bottom: BorderSide(color: Colors.black)));
-//           }
-//           tempPatientsAndScores.add(tile);
-//         }
-//       }
-
-//       setState(() {
-//         patientsAndScores = tempPatientsAndScores;
-//       });
-//     }
-//   } catch (e) {
-//     print("Error loading patients: $e");
-//   }
-// }
-//   // void loadPatients() async {
-//   //   ListTile tile;
-//   //   try {
-//   //     var items = await getPatients();
-//   //     patientList = items;
-//   //     if (items.isNotEmpty) {
-//   //       patientList.forEach((key, value) async {
-//   //         summaryScore =
-//   //             await fetchSummarySafetyScore("2024-01-01", "2024-10-10", value);
-//   //         if (summaryScore.isNotEmpty) {
-//   //           summaryScores.add(summaryScore);
-//   //           double s = double.parse(summaryScore);
-//   //           if (s >= 80 && s < 101) {
-//   //             tile = new ListTile(
-//   //                 tileColor: Color.fromARGB(255, 68, 125, 171),
-//   //                 title: Text(key),
-//   //                 subtitle: Text("Summary Score: " + summaryScore),
-//   //                 onTap: () {
-//   //                   Navigator.of(context).push(MaterialPageRoute(
-//   //                       builder: (context) =>
-//   //                           PatientDisplayScreen(key, value)));
-//   //                 },
-//   //                 shape: Border(
-//   //                   bottom: BorderSide(color: Colors.black),
-//   //                 ));
-//   //             patientsAndScores.add(tile);
-//   //           } else if (s >= 60 && s < 80) {
-//   //             tile = new ListTile(
-//   //                 tileColor: Color.fromARGB(255, 106, 121, 134),
-//   //                 title: Text(key),
-//   //                 subtitle: Text("Summary Score: " + summaryScore),
-//   //                 shape: Border(
-//   //                   bottom: BorderSide(color: Colors.black),
-//   //                 ));
-//   //             patientsAndScores.add(tile);
-//   //           } else if (s == 0) {
-//   //             tile = new ListTile(
-//   //                 tileColor: Color.fromARGB(255, 189, 189, 198),
-//   //                 title: Text(key),
-//   //                 subtitle: Text("Summary Score: -"),
-//   //                 shape: Border(
-//   //                   bottom: BorderSide(color: Colors.black),
-//   //                 ));
-//   //             patientsAndScores.add(tile);
-//   //           } else {
-//   //             ListTile tile = new ListTile(
-//   //                 tileColor: Color.fromARGB(255, 249, 0, 0),
-//   //                 title: Text(key),
-//   //                 subtitle: Text("Summary Score: " + summaryScore),
-//   //                 shape: Border(bottom: BorderSide(color: Colors.black)));
-//   //             patientsAndScores.add(tile);
-//   //           }
-//   //         }
-//   //       });
-//   //     }
-//   //   } catch (e) {
-//   //     print("Error loading patients: $e");
-//   //   }
-//   //   // if(patientsAndScores.isNotEmpty){
-//   //   //   patientsAndScores.sort((a, b) => a.title?.compareTo(b.title?));
-//   //   // }
-//   //   // patientsAndScores.sort((a, b) => a.title?.toString.compareTo(b.title?.toString));
-//   //   setState(() {});
-//   // }
-
-//   int _selectedIndex = 0;
-//   void _onItemTapped(int index) {
-//     setState(() {
-//       _selectedIndex = index;
-//       if (index == 1) {
-//         Navigator.push(
-//             context, MaterialPageRoute(builder: (context) => SettingsScreen()));
-//       }
-//     });
-//   }
-
-//   Widget _bottomNav() {
-//     return BottomNavigationBar(
-//       items: const <BottomNavigationBarItem>[
-//         BottomNavigationBarItem(
-//           icon: Icon(Icons.home),
-//           label: 'Home',
-//         ),
-//         BottomNavigationBarItem(
-//           icon: Icon(Icons.settings),
-//           label: 'Settings',
-//         ),
-//       ],
-//       currentIndex: _selectedIndex,
-//       selectedItemColor: Color.fromARGB(255, 103, 139, 183),
-//       onTap: _onItemTapped,
-//     );
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       body: ListView(
-//         shrinkWrap: false,
-//         padding: const EdgeInsets.symmetric(horizontal: 16),
-//         children: [
-//           Row(
-//             children: [
-//               Padding(padding: EdgeInsets.only(top: 200, right: 150)),
-//               Text('Home', style: TextStyle(color: Colors.black, fontSize: 20)),
-//               Padding(padding: EdgeInsets.only(right: 100)),
-//               IconButton(
-//                 icon: Icon(
-//                   Icons.info_outline,
-//                   size: 25,
-//                   color: Colors.black,
-//                 ),
-//                 onPressed: () {
-//                   showDialog(
-//                       context: context, builder: (context) => Tutorial());
-//                 },
-//               ),
-//             ],
-//           ),
-//           // Column(children: _listItems()),
-//           Column(children: patientsAndScores),
-//           _sizedBoxSpace,
-//           _sizedBoxSpace,
-//         ],
-//       ),
-//       bottomNavigationBar: _bottomNav(),
-//     );
-//   }
-
-//   @override
-//   void dispose() {
-//     super.dispose();
-//   }
-// }
-
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:telematics_sdk_example/screens/physicianUI/physician_settings_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:telematics_sdk_example/services/fire_fetch.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:telematics_sdk_example/screens/physicianUI/patient_display_screen.dart';
 import 'package:telematics_sdk_example/screens/physicianUI/physician_tutorial_screen.dart';
+import 'package:telematics_sdk_example/services/UnifiedAuthService.dart';
 
 class PhysicianHomeScreen extends StatefulWidget {
   const PhysicianHomeScreen({super.key});
@@ -340,12 +28,14 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
   Map<String, String> _sortedMap = Map();
   TextEditingController _filterSortedController = TextEditingController();
 
+  final UnifiedAuthService _auth = UnifiedAuthService();
+
   // Initial value (email by default)
   String dropdownvalue = 'Sort by email';
   // List of items in filter menu
   var items = [
     'Sort by email',
-    'Sort by safety score',
+    'Sort by low safety score',
   ];
 
   @override
@@ -363,6 +53,22 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
       setState(() {
         uid = currentUser.uid;
       });
+    }
+  }
+
+  Future<void> _deletePatient(String patientId, String accessToken) async {
+    DatabaseReference patientRef =
+        FirebaseDatabase.instance.ref('patients/$patientId');
+    DatabaseReference userTokenRef =
+        FirebaseDatabase.instance.ref('userTokens/$accessToken');
+
+    try {
+      await patientRef.remove(); // Delete patient
+      await userTokenRef.remove(); // Delete corresponding token
+
+      print("Patient and token deleted successfully.");
+    } catch (error) {
+      print("Error deleting patient: $error");
     }
   }
 
@@ -385,9 +91,20 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
         return emailA.compareTo(emailB);
       });
 
+      // Print patient list in console
+      print("Fetched Patients:");
+      for (var patient in patients) {
+        print(
+            "Email: ${patient['email']}, ID: ${patient['key']} deviceToken: ${patient['deviceToken']}");
+      }
+
       for (var i = 0; i < patients.length; i++) {
         String score = await fetchSummarySafetyScore(
-            "2024-01-01", "2024-10-10", patients.elementAt(i)['accessToken']);
+            "2025-01-01",
+            "2025-10-10",
+            patients.elementAt(i)['accessToken'],
+            patients.elementAt(i)['deviceToken'],
+            patients.elementAt(i)['key']);
         score = score.split(".")[0];
         scores.add(score);
       }
@@ -401,42 +118,131 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
     }
   }
 
-  Future<String> fetchSummarySafetyScore(
-      String startDate, String endDate, String authToken) async {
+  Future<String> fetchSummarySafetyScore(String startDate, String endDate,
+      String authToken, String deviceToken, String key) async {
+    print("\n=== Starting Safety Score Fetch ===");
+    print("Start Date: $startDate");
+    print("End Date: $endDate");
+    print("Auth Token: ${authToken.substring(0, 10)}...");
+    print("Device Token: ${deviceToken.substring(0, 10)}...");
+
     var client = http.Client();
     String statistics = '';
+    String? instanceId = await fireFetch('InstanceId');
+    print("Instance ID from fireFetch: $instanceId");
+    String? fetchKey = await fireFetch('InstanceKey');
+    String instanceKey = fetchKey.toString();
+    print("Instance key from fireFetch: $instanceKey");
+
     try {
       var url =
           Uri.parse('https://api.telematicssdk.com/indicators/v2/Scores/safety')
               .replace(queryParameters: {
         'StartDate': startDate,
-        'EndDate': endDate,
+        'EndDate': endDate
       });
+      print("Making API request to: $url");
 
       final response = await client.get(
         url,
         headers: {
           'accept': 'application/json',
-          'authorization': 'Bearer $authToken',
+          'authorization': 'Bearer $authToken'
         },
       );
+
+      print("Initial API response status: ${response.statusCode}");
+      print("Initial API response body: ${response.body}");
+
       if (response.statusCode == 200) {
         Map<String, dynamic> data = jsonDecode(response.body);
-        if (data["Result"] != null) {
-          statistics = data["Result"]["SafetyScore"].toString();
+        statistics = data["Result"]?["SafetyScore"]?.toString() ?? "0";
+        print("Successfully fetched safety score: $statistics");
+      } else if (response.statusCode == 401) {
+        print("\n=== Token Expired - Starting Refresh Process ===");
+
+        if (instanceId != null) {
+          print("Fetching current refresh token from Firebase...");
+          DatabaseEvent event =
+              await FirebaseDatabase.instance.ref('patients/$key').once();
+
+          if (event.snapshot.exists) {
+            final data = event.snapshot.value as Map<dynamic, dynamic>;
+            String? email = data['email'];
+            print("Email for user: " + email.toString());
+            String? currentRefreshToken = data['refreshToken'];
+            print(
+                "Current refresh token from Firebase: ${currentRefreshToken?.substring(0, 10)}...");
+
+            if (currentRefreshToken != null) {
+              print("Attempting to refresh token with UnifiedAuthService...");
+              var refreshResponse = await _auth.refreshToken(
+                  deviceToken, instanceId, instanceKey, currentRefreshToken);
+              print("Refresh response: $refreshResponse");
+
+              if (refreshResponse != null &&
+                  refreshResponse['Result'] != null) {
+                String newAccessToken =
+                    refreshResponse['Result']['AccessToken']['Token'];
+                String newRefreshToken =
+                    refreshResponse['Result']['RefreshToken'];
+                print(
+                    "New access token: ${newAccessToken.substring(0, 10)}...");
+                print(
+                    "New refresh token: ${newRefreshToken.substring(0, 10)}...");
+
+                print("Updating tokens in Firebase...");
+                await UnifiedAuthService.updateTokensInFirebase(
+                    key, newAccessToken, newRefreshToken);
+                print("Tokens updated in Firebase successfully");
+
+                print("Retrying API call with new token...");
+                final retryResponse = await client.get(
+                  url,
+                  headers: {
+                    'accept': 'application/json',
+                    'authorization': 'Bearer $newAccessToken'
+                  },
+                );
+
+                print("Retry response status: ${retryResponse.statusCode}");
+                print("Retry response body: ${retryResponse.body}");
+
+                if (retryResponse.statusCode == 200) {
+                  Map<String, dynamic> retryData =
+                      jsonDecode(retryResponse.body);
+                  statistics =
+                      retryData["Result"]?["SafetyScore"]?.toString() ?? "0";
+                  print(
+                      "Successfully fetched safety score after token refresh: $statistics");
+                } else {
+                  print(
+                      "Error retrying with new token: ${retryResponse.statusCode}");
+                  print("Error response body: ${retryResponse.body}");
+                }
+              } else {
+                print("refresh response is null or error");
+                statistics = '0';
+              }
+            } else {
+              print("No refresh token found in Firebase");
+            }
+          } else {
+            print("No data found in Firebase for device token: $deviceToken");
+          }
         } else {
-          statistics = "0";
+          print("Failed to get Instance ID");
         }
       } else {
-        print(
-            'Failed to fetch daily statistics, status code: ${response.statusCode}, response: ${response.body}');
+        print("Unexpected error status code: ${response.statusCode}");
+        print("Error response body: ${response.body}");
       }
     } catch (e) {
-      print('Error fetching daily statistics: $e');
+      print('Error in fetchSummarySafetyScore: $e');
     } finally {
       client.close();
     }
-    setState(() {});
+    print("=== Finished Safety Score Fetch ===\n");
     return statistics;
   }
 
@@ -477,7 +283,8 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
       });
       var map = Map.fromIterables(emails, _summaryScores);
       var mapEntries = map.entries.toList()
-        ..sort((a, b) => int.parse(a.value).compareTo(int.parse(b.value)));
+        ..sort((a, b) => (int.tryParse(a.value) ?? 0)
+            .compareTo((int.tryParse(b.value) ?? 0)));
       map.clear();
       map.addEntries(mapEntries);
       setState(() {
@@ -496,7 +303,9 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
         String token = _sortedPatients[index].split("BREAK")[1];
         String score = _sortedScores[index];
         Color tileColor = Colors.white;
-        int s = int.parse(score);
+        print('Raw score: $score');
+        int s = int.tryParse(score) ?? 0;
+        print('Parsed score: ' + s.toString());
         if (s >= 80 && s < 101) {
           tileColor = Color.fromARGB(255, 95, 158, 210);
         } else if (s >= 60 && s < 80) {
@@ -522,36 +331,45 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
   }
 
   Widget _buildPatientsList() {
-    return ListView.builder(
-      itemCount: _filteredPatientsList.length,
-      itemBuilder: (context, index) {
-        var patient = _filteredPatientsList[index];
-        String score = _summaryScores.elementAt(index);
-        String email = patient['email'] ?? 'No email';
-        String token = patient['accessToken'];
-        Color tileColor = Colors.white;
-        int s = int.parse(score);
-        if (s >= 80 && s < 101) {
-          tileColor = Color.fromARGB(255, 95, 158, 210);
-        } else if (s >= 60 && s < 80) {
-          tileColor = Color.fromARGB(255, 106, 121, 134);
-        } else if (s >= 1 && s < 60) {
-          tileColor = Color.fromARGB(255, 250, 38, 38);
-        }
-        ;
-        return new ListTile(
-            tileColor: tileColor,
-            leading: Icon(Icons.person),
-            title: Text(email, style: TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text("Summary Safety Score: ${score}"),
-            onTap: () {
-              Navigator.of(context).push(MaterialPageRoute(
-                  builder: (context) => PatientDisplayScreen(email, token)));
-            },
-            shape: Border(
-              top: BorderSide(color: const Color.fromARGB(255, 98, 96, 96)),
-            ));
-      },
+    return SizedBox(
+      height: 300,
+      child: SingleChildScrollView(
+        child: Column(
+          children: List.generate(_filteredPatientsList.length, (index) {
+            var patient = _filteredPatientsList[index];
+            String score = _summaryScores.elementAt(index);
+            String email = patient['email'] ?? 'No email';
+            String token = patient['accessToken'];
+            Color tileColor = Colors.white;
+
+            print('Raw score: ${score}');
+            int s = int.tryParse(score) ?? 0;
+            print('Parsed Score: ${s}');
+
+            if (s >= 80 && s < 101) {
+              tileColor = Color.fromARGB(255, 95, 158, 210);
+            } else if (s >= 60 && s < 80) {
+              tileColor = Color.fromARGB(255, 106, 121, 134);
+            } else if (s >= 1 && s < 60) {
+              tileColor = Color.fromARGB(255, 250, 38, 38);
+            }
+
+            return ListTile(
+              tileColor: tileColor,
+              leading: Icon(Icons.person),
+              title: Text(email, style: TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: Text("Summary Safety Score: ${score}"),
+              onTap: () {
+                Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => PatientDisplayScreen(email, token)));
+              },
+              shape: Border(
+                top: BorderSide(color: const Color.fromARGB(255, 98, 96, 96)),
+              ),
+            );
+          }),
+        ),
+      ),
     );
   }
 
@@ -680,13 +498,21 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
       body: Column(
         children: [
           _sortMenu(),
-          // _searchBar(),
+          SizedBox(
+              height: 10), // Add spacing between the sort menu and search bar
           if (dropdownvalue == "Sort by email") ...[
             _searchBar(),
-            Expanded(child: _buildPatientsList()),
+            SizedBox(
+                height: 10), // Add space between the search bar and the list
+            Expanded(
+                child: _buildPatientsList()), // Wrap ListView with Expanded
           ] else ...[
             _sortedSearchBar(),
-            Expanded(child: _buildPatientsSortedList()),
+            SizedBox(
+                height: 10), // Add space between the search bar and the list
+            Expanded(
+                child:
+                    _buildPatientsSortedList()), // Wrap ListView with Expanded
           ],
         ],
       ),

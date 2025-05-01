@@ -70,7 +70,7 @@ class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
             child: Container(
               decoration: BoxDecoration(
                 border: Border.all(
-                  color: (const Color.fromARGB(255, 4, 27, 63))!,
+                  color: (const Color.fromARGB(255, 4, 27, 63)),
                   width: 5,
                 ),
               ),
@@ -210,7 +210,7 @@ class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
             child: Container(
               decoration: BoxDecoration(
                 border: Border.all(
-                  color: (const Color.fromARGB(255, 4, 27, 63))!,
+                  color: (const Color.fromARGB(255, 4, 27, 63)),
                   width: 5,
                 ),
               ),
@@ -573,11 +573,22 @@ class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
 
       if (user != null) {
         if (!mounted) return;
-        Navigator.of(context).pushReplacement(
+        String role = await _auth.checkUserRole(user.uid!);
+
+        if(role == "Physician"){
+          Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (context) => PhysicianHomeScreen()));
 
         //   // Stop loading
-        setState(() => isLoading = false);
+          setState(() => isLoading = false);
+        } else if (role == "Patient"){
+          setState(() {
+            isLoading = false;
+            _snackBar('Patients are not allowed to sign in here.');
+          });
+        } else {
+          throw Exception("Could not sign you in as Physician");
+        }
       } else {
         showLoginDialog(
             context, "Login Failed", "Email or Password is incorrect");

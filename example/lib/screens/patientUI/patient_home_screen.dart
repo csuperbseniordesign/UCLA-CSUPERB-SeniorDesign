@@ -167,9 +167,9 @@ class _PatientHomeScreenState extends State<PatientHomeScreen>
           // Text("Virtual Device Token:\n ${_tokenEditingController.text}"),
           // (Platform.isIOS)
           //     ? Text(
-          //         'Tracking: ${_isSdkEnabled && _isTracking ? 'Enabled' : 'Disabled'}')
+          //         'Tracking: ${_isSdkEnabled && _isTracking && _isAllRequiredPermissionsGranted ? 'Enabled' : 'Disabled'}')
           //     : SizedBox.shrink(),
-          // Text(_getCurrentLocation()),
+          //Text(_getCurrentLocation()),
           _sizedBoxSpace,
           Text(
             'Tracking Status',
@@ -180,9 +180,11 @@ class _PatientHomeScreenState extends State<PatientHomeScreen>
             ),
           ),
           Text(
-              ' ${_isSdkEnabled && _isTracking ? '- ENABLED -' : ' - DISABLED-'}',
+              ' ${_isSdkEnabled && _isTracking && _isAllRequiredPermissionsGranted ? '- ENABLED -' : ' - DISABLED-'}',
               textAlign: TextAlign.center,
-              style: _isSdkEnabled && _isTracking
+              style: _isSdkEnabled &&
+                      _isTracking &&
+                      _isAllRequiredPermissionsGranted
                   ? TextStyle(
                       color: Color.fromARGB(255, 49, 165, 4),
                       fontSize: 30,
@@ -288,7 +290,9 @@ class _PatientHomeScreenState extends State<PatientHomeScreen>
 
       setState(() {
         // Only update trip state if there is a change
-        if (!_isTripOngoing) {
+
+        if (isCurrentlyMoving != _isTripOngoing) {
+
           if (isCurrentlyMoving) {
             // Movement detected
             _isTripOngoing = true;
@@ -299,6 +303,7 @@ class _PatientHomeScreenState extends State<PatientHomeScreen>
           } else {
             // End of trip detected, start inactivity timer
             // _inactivityTimer?.cancel();
+
           }
         } else if (_isTripOngoing) {
           // Update speed info without changing trip state
@@ -306,5 +311,33 @@ class _PatientHomeScreenState extends State<PatientHomeScreen>
         }
       });
     });
+
+  }
+
+  void _showEndOfTripDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Trip Completed'),
+          content: const Text('Were you the driver for this trip?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Yes'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('No'),
+            ),
+          ],
+        );
+      },
+    );
+
   }
 }
