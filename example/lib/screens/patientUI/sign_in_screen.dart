@@ -563,7 +563,7 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
                 _passwordCheck(),
                 DropdownButtonFormField<String>(
                   padding: EdgeInsets.symmetric(horizontal: 40),
-                  value: physicianUid,
+                  initialValue: physicianUid,
                   hint: const Text('SELECT PHYSICIAN'),
                   onChanged: (String? newValue) {
                     setState(() {

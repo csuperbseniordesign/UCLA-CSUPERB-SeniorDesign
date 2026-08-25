@@ -441,8 +441,8 @@ class UnifiedAuthService {
     User? user = _auth.currentUser;
     if (user != null) {
       try {
-        await user.updateEmail(newEmail);
-        print("Email updated successfully to $newEmail");
+        await user.verifyBeforeUpdateEmail(newEmail);
+        print("Email verification sent to $newEmail");
       } catch (e) {
         print("Failed to update email: $e");
         // Handle the error appropriately

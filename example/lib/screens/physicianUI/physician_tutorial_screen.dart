@@ -156,8 +156,6 @@ class TutorialState extends State<Tutorial> {
           Icons.security,
         );
         break;
-      default:
-        break;
     }
     return body;
   }

@@ -182,7 +182,7 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> {
                     // onExpansionChanged: 
                     children: <Widget>[
                       DropdownButtonFormField<String>(
-                        value: _selectedGender,
+                        initialValue: _selectedGender,
                         decoration: const InputDecoration(labelText: 'Gender'),
                         onChanged: (String? newValue) {
                           setState(() {

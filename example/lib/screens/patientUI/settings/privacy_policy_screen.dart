@@ -7,7 +7,6 @@ class PrivacyPolicyScreen extends StatefulWidget {
 }
 
 class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
-  bool _customTileExpanded = false;
 
   Widget _header(){
     return  Container(
@@ -40,11 +39,6 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
       children: const <Widget>[
         ListTile(subtitle: Text('[app name] is intended for use as a glaucoma monitoring tool for individuals with mild to moderate glaucoma. [app name] is a clinical tool and, thus, is committed to the protection of user privacy. The following document contains a composite of information to help users—both patient and physician—understand both the data collected from them and the ways in which the data is utilized.')),
       ],
-      onExpansionChanged: (bool expanded) {
-        setState(() {
-          _customTileExpanded = expanded;
-        });
-      },
     );
   }
 
@@ -60,11 +54,6 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
         ListTile(subtitle:Text("\nDriving Statistics", style: TextStyle(fontWeight: FontWeight.bold))),
         ListTile(subtitle: Text("The following data is collected from a user’s smartphone during an automatically-detected driving event: \n\n• Triaxial accelerometer streams\n• Gyroscope streams \n\nThis data is used to quantify device acceleration and rotation, which will be fed into algorithms that subsequently determine driving events.")),
       ],
-      onExpansionChanged: (bool expanded) {
-        setState(() {
-          _customTileExpanded = expanded;
-        });
-      },
     );
   }
 
@@ -75,11 +64,6 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
       children: const <Widget>[
         ListTile(subtitle: Text("Sensitive personal information—including the user’s social security number, driver's license number, race, ethnicity, or religion—is not collected.")),
       ],
-      onExpansionChanged: (bool expanded) {
-        setState(() {
-          _customTileExpanded = expanded;
-        });
-      },
     );
   }
 
@@ -90,11 +74,6 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
       children: const <Widget>[
         ListTile(subtitle: Text("Personal contact information (i.e., email) is used for communication between [app name] and the patient. Optional personal information (i.e., age and sex) is used to provide more accurate monitoring of glaucoma progress. Raw smartphone sensor data is used to determine driving events that subsequently inform a user’s glaucoma severity.\n\nPersonal contact information (i.e., email) is used for communication between [app name] and the physician. Full name, clinic name, and physician credentials are used to verify that an individual is a physician.")),
       ],
-      onExpansionChanged: (bool expanded) {
-        setState(() {
-          _customTileExpanded = expanded;
-        });
-      },
     );
 
   } 
@@ -106,11 +85,6 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
       children: const <Widget>[
         ListTile(subtitle: Text("The user’s email and optionally provided personal information will be stored as long as the user does not delete their account. Raw sensor data will be stored for three months.")),
       ],
-      onExpansionChanged: (bool expanded) {
-        setState(() {
-          _customTileExpanded = expanded;
-        });
-      },
     );
   }
 
@@ -120,11 +94,6 @@ Widget _tile6() {
       children: const <Widget>[
         ListTile(subtitle: Text("Personal and sensor data are not shared with third parties.")),
       ],
-      onExpansionChanged: (bool expanded) {
-        setState(() {
-          _customTileExpanded = expanded;
-        });
-      },
     );
   }
 
@@ -140,11 +109,6 @@ Widget _tile6() {
        ListTile(subtitle: Text("\nAbility to request deletion of personal information", style: TextStyle(fontWeight: FontWeight.bold))),
        ListTile(subtitle: Text("Users may decline to delete collected data in compliance with the California Consumer Privacy Act. However, users should be aware that deleting the email data is akin to deleting the account, as the email acts as a unique identification key for each account.")),
       ],
-      onExpansionChanged: (bool expanded) {
-        setState(() {
-          _customTileExpanded = expanded;
-        });
-      },
     );
   }
 
@@ -154,11 +118,6 @@ Widget _tile6() {
       children: const <Widget>[
         ListTile(subtitle: Text("Please contact cscsulaseniordesign@gmail.com with any questions regarding this privacy policy. A representative from [app name] will address your inquiries within 48 hours.")),
       ],
-      onExpansionChanged: (bool expanded) {
-        setState(() {
-          _customTileExpanded = expanded;
-        });
-      },
     );
   }
 
@@ -168,11 +127,6 @@ Widget _tile6() {
       children: const <Widget>[
         ListTile(subtitle: Text("This privacy policy was last updated on February 26th, 2024. Should any updates occur to the privacy policy, all users will be notified of the change through the email associated with their account. This privacy policy is effective immediately upon publishment.")),
       ],
-      onExpansionChanged: (bool expanded) {
-        setState(() {
-          _customTileExpanded = expanded;
-        });
-      },
     );
   }
 

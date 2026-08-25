@@ -49,7 +49,7 @@ class _PatientDisplayScreenState extends State<PatientDisplayScreen> {
               borderRadius: BorderRadius.all(Radius.circular(10)),
               boxShadow: [
                 BoxShadow(
-                  color: Color.fromARGB(255, 66, 63, 63).withOpacity(0.5),
+                  color: Color.fromARGB(255, 66, 63, 63).withValues(alpha: 0.5),
                   spreadRadius: 1,
                   blurRadius: 2,
                   offset: Offset(0, 1),
@@ -71,7 +71,7 @@ class _PatientDisplayScreenState extends State<PatientDisplayScreen> {
               borderRadius: BorderRadius.all(Radius.circular(10)),
               boxShadow: [
                 BoxShadow(
-                  color: Color.fromARGB(255, 66, 63, 63).withOpacity(0.5),
+                  color: Color.fromARGB(255, 66, 63, 63).withValues(alpha: 0.5),
                   spreadRadius: 1,
                   blurRadius: 2,
                   offset: Offset(0, 1),
@@ -92,7 +92,7 @@ class _PatientDisplayScreenState extends State<PatientDisplayScreen> {
               borderRadius: BorderRadius.all(Radius.circular(10)),
               boxShadow: [
                 BoxShadow(
-                  color: Color.fromARGB(255, 0, 0, 0).withOpacity(0.5),
+                  color: Color.fromARGB(255, 0, 0, 0).withValues(alpha: 0.5),
                   spreadRadius: 1,
                   blurRadius: 2,
                   offset: Offset(0, 1),
