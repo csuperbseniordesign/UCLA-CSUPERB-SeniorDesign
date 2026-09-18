@@ -3,7 +3,7 @@ import UIKit
 import RaxelPulse
 import flutter_local_notifications
 @main
-@objc class AppDelegate: FlutterAppDelegate {
+@objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
@@ -18,8 +18,11 @@ import flutter_local_notifications
       let options = launchOptions ?? [:]
       RPEntry.application(application, didFinishLaunchingWithOptions: options)
       
-      GeneratedPluginRegistrant.register(with: self)
       return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+
+    func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
+      GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
   }
 }
 // import Flutter
