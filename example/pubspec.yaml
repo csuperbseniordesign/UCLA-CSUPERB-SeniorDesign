@@ -16,6 +16,8 @@ dependencies:
   flutter_pw_validator: ^1.6.0
   flutter:
     sdk: flutter
+  flutter_local_notifications: ^18.0.1
+  signature: ^5.4.0
 
   telematics_sdk:
     path: ../

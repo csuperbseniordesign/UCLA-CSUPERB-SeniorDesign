@@ -28,6 +28,7 @@ class _PatientHomeScreenState extends State<PatientHomeScreen>
 
   var _deviceId = '';
   var _isSdkEnabled = false;
+  var _isAllRequiredPermissionsGranted = false;
   var _isTracking = true;
 
   final _tokenEditingController = TextEditingController();
@@ -36,7 +37,8 @@ class _PatientHomeScreenState extends State<PatientHomeScreen>
   bool _isTripOngoing = false;
   String _speedInfo = "Waiting for trip to start...";
   final double notMovingSpeedThreshold = 0.5; // meters per second
-  final int inactivityTimeout = 60; // seconds
+  final int inactivityTimeout = 120; // seconds
+  bool _isAppInForeground = true;
 
   final NotificationService notificationService = NotificationService();
 
@@ -78,6 +80,8 @@ class _PatientHomeScreenState extends State<PatientHomeScreen>
     _isSdkEnabled = await _trackingApi.isSdkEnabled() ?? false;
 
     // bool if perms are granted
+    _isAllRequiredPermissionsGranted =
+        await _trackingApi.isAllRequiredPermissionsAndSensorsGranted() ?? false;
 
     // disable tracking & aggressive heartbeats
     if (Platform.isIOS) {
@@ -167,9 +171,9 @@ class _PatientHomeScreenState extends State<PatientHomeScreen>
           // Text("Virtual Device Token:\n ${_tokenEditingController.text}"),
           // (Platform.isIOS)
           //     ? Text(
-          //         'Tracking: ${_isSdkEnabled && _isTracking ? 'Enabled' : 'Disabled'}')
+          //         'Tracking: ${_isSdkEnabled && _isTracking && _isAllRequiredPermissionsGranted ? 'Enabled' : 'Disabled'}')
           //     : SizedBox.shrink(),
-          // Text(_getCurrentLocation()),
+          //Text(_getCurrentLocation()),
           _sizedBoxSpace,
           Text(
             'Tracking Status',
@@ -180,9 +184,11 @@ class _PatientHomeScreenState extends State<PatientHomeScreen>
             ),
           ),
           Text(
-              ' ${_isSdkEnabled && _isTracking ? '- ENABLED -' : ' - DISABLED-'}',
+              ' ${_isSdkEnabled && _isTracking && _isAllRequiredPermissionsGranted ? '- ENABLED -' : ' - DISABLED-'}',
               textAlign: TextAlign.center,
-              style: _isSdkEnabled && _isTracking
+              style: _isSdkEnabled &&
+                      _isTracking &&
+                      _isAllRequiredPermissionsGranted
                   ? TextStyle(
                       color: Color.fromARGB(255, 49, 165, 4),
                       fontSize: 30,
@@ -246,7 +252,10 @@ class _PatientHomeScreenState extends State<PatientHomeScreen>
 
     if (result == PermissionWizardResult.allGranted ||
         result == PermissionWizardResult.notAllGranted) {
-      setState(() {});
+      setState(() {
+        _isAllRequiredPermissionsGranted =
+            result == PermissionWizardResult.allGranted;
+      });
     }
 
     _showSnackBar(_wizardResultMapping[result] ?? '');
@@ -274,6 +283,7 @@ class _PatientHomeScreenState extends State<PatientHomeScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
+    _isAppInForeground = state == AppLifecycleState.resumed;
   }
 
   void startListeningLocation() {
@@ -286,25 +296,65 @@ class _PatientHomeScreenState extends State<PatientHomeScreen>
 
       bool isCurrentlyMoving = speedInMph > notMovingSpeedThreshold;
 
-      setState(() {
-        // Only update trip state if there is a change
-        if (!_isTripOngoing) {
-          if (isCurrentlyMoving) {
-            // Movement detected
+      if (!mounted) return;
+
+      if (isCurrentlyMoving) {
+        _inactivityTimer?.cancel();
+        _inactivityTimer = null;
+        setState(() {
+          if (!_isTripOngoing) {
             _isTripOngoing = true;
             _speedInfo =
                 "Trip started. Speed: ${speedInMph.toStringAsFixed(2)} mph";
-            print("Trip started");
-            _inactivityTimer?.cancel();
           } else {
-            // End of trip detected, start inactivity timer
-            // _inactivityTimer?.cancel();
+            _speedInfo = "Speed: ${speedInMph.toStringAsFixed(2)} mph";
           }
-        } else if (_isTripOngoing) {
-          // Update speed info without changing trip state
-          _speedInfo = "Speed: ${speedInMph.toStringAsFixed(2)} mph";
-        }
-      });
+        });
+      } else if (_isTripOngoing && _inactivityTimer == null) {
+        _inactivityTimer = Timer(Duration(seconds: inactivityTimeout), () {
+          if (!mounted) return;
+
+          setState(() {
+            _isTripOngoing = false;
+            _speedInfo = "Trip ended. Device is stationary.";
+            _inactivityTimer = null;
+          });
+
+          if (_isAppInForeground) {
+            _showEndOfTripDialog(context);
+          }
+          NotificationService.showEndTripNotification(
+            title: 'Trip Completed',
+            body: 'Were you the driver for this trip?',
+          );
+        });
+      }
     });
+  }
+
+  void _showEndOfTripDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Trip Completed'),
+          content: const Text('Were you the driver for this trip?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Yes'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('No'),
+            ),
+          ],
+        );
+      },
+    );
   }
 }

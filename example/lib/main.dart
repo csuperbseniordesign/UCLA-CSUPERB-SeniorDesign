@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 // import 'package:telematics_sdk_example/screens/title_screen.dart';
-import 'package:telematics_sdk_example/screens/welcome_screen.dart';
+import 'package:telematics_sdk_example/widgets/wrapper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,7 +25,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'TelematicsSDK Example',
-      home: WelcomeScreen(),
+      home: Wrapper(),
     );
   }
 }

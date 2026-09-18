@@ -25,7 +25,7 @@ class _AboutAppScreenState extends State<AboutAppScreen> {
                 alignment: Alignment.topCenter,
                 //color: Colors.blue,
                 child: Text(
-                  'ABOUT MYAPP',
+                  'ABOUT EyeMyWay',
                   style: TextStyle(
                     fontSize: 29,
                     fontWeight: FontWeight.bold,
@@ -47,7 +47,7 @@ class _AboutAppScreenState extends State<AboutAppScreen> {
                 alignment: Alignment.topCenter,
                 //color: Colors.yellow,
                 child: Text(
-                  'Welcome to AppName! Your go-to free tracking and safe-driving app.',
+                  'Welcome to EyeMyWay! Your go-to free tracking and safe-driving app.',
                   textAlign: TextAlign.left,
                 ),
               ),
@@ -65,7 +65,7 @@ class _AboutAppScreenState extends State<AboutAppScreen> {
                       child: Column(
                         children: <Widget>[
                           Text(
-                            'At AppName, we believe in promoting safe driving habits and empowering individuals to make informed decisions about their journeys.',
+                            'At EyeMyWay, we believe in promoting safe driving habits and empowering individuals to make informed decisions about their journeys.',
                             textAlign: TextAlign.left,
                             style: TextStyle(fontSize: 12.5),
                           ),
