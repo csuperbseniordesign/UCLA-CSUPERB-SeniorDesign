@@ -118,7 +118,6 @@ class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
                 width: 3.0,
               ),
             ),
-            child: BackButton(color: Colors.white),
           ),
         ),
         // This is for the beige ball-top left.
@@ -258,7 +257,6 @@ class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
                 width: 3.0,
               ),
             ),
-            child: BackButton(color: Colors.white),
           ),
         ),
         // This is for the beige ball-top left.
@@ -337,6 +335,16 @@ class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _backButton() {
+    return const Positioned(
+      top: 30,
+      left: -40,
+      width: 125,
+      height: 125,
+      child: BackButton(color: Colors.white),
     );
   }
 
@@ -701,6 +709,7 @@ class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
               ],
             ],
           ),
+          _backButton(),
         ],
       ),
     );

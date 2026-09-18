@@ -39,6 +39,7 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
   String clientId = '';
   String? physicianUid;
   List<DropdownMenuItem<String>> physicianItems = [];
+  bool isLoadingPhysicians = true;
 
   @override
   void initState() {
@@ -51,17 +52,23 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
   void loadPhysicians() async {
     try {
       var items = await _auth.getPhysicianDropdownItems();
-      print("Physician items loaded: $items"); // Debugging print
-
+      if (!mounted) return;
       setState(() {
         physicianItems = items;
-        if (items.isNotEmpty && physicianUid == null) {
-          physicianUid = items.first.value;
-        }
+        isLoadingPhysicians = false;
       });
     } catch (e) {
-      print("Error loading physicians: $e");
+      if (!mounted) return;
+      setState(() => isLoadingPhysicians = false);
     }
+  }
+
+  @override
+  void dispose() {
+    _controllerEmail.dispose();
+    _controllerPassword.dispose();
+    _controllerConfirmPassword.dispose();
+    super.dispose();
   }
 
   // border of the page and logo
@@ -123,7 +130,6 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
                 width: 3.0,
               ),
             ),
-            child: BackButton(color: Colors.white),
           ),
         ),
         // This is for the beige ball-top left.
@@ -207,35 +213,41 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
 
   // Header of the screen
   Widget _loginHeader() {
-    return Align(
-      alignment: Alignment.center,
-      child: Padding(
-        padding: const EdgeInsets.only(top: 275, left: 20, right: 20),
-        child: Column(
-          children: [
-            Text(
-              isLogin ? 'Sign In' : 'Sign Up',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 25.0,
-                fontWeight: FontWeight.bold,
-              ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        children: [
+          Text(
+            isLogin ? 'Sign In' : 'Sign Up',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 25.0,
+              fontWeight: FontWeight.bold,
             ),
-            SizedBox(
-              height: 10,
-              width: 100,
-            ),
-          ],
-        ),
+          ),
+          SizedBox(
+            height: 10,
+            width: 100,
+          ),
+        ],
       ),
     );
   }
 
+  Widget _backButton() {
+    return const Positioned(
+      top: 30,
+      left: -40,
+      width: 125,
+      height: 125,
+      child: BackButton(color: Colors.white),
+    );
+  }
+
   // Text fields for either sign in or sign up
-  Widget _entryField(
-    String title,
-    TextEditingController controller,
-  ) {
+  Widget _entryField(String title, TextEditingController controller,
+      {bool obscureText = false,
+      TextInputAction textInputAction = TextInputAction.next}) {
     return Padding(
       padding: const EdgeInsets.only(left: 0),
       child: SizedBox(
@@ -243,6 +255,11 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
         width: 300,
         child: TextField(
           controller: controller,
+          obscureText: obscureText,
+          textInputAction: textInputAction,
+          keyboardType: title == 'EMAIL'
+              ? TextInputType.emailAddress
+              : TextInputType.text,
           autofocus: false,
           cursorColor: Color.fromARGB(255, 14, 56, 90),
           decoration: InputDecoration(
@@ -257,7 +274,6 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
     );
   }
 
-  // DOESN"T WORK
   Widget _passwordCheck() {
     return Padding(
         padding: const EdgeInsets.only(left: 0),
@@ -267,6 +283,7 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
           child: TextFormField(
             controller: _controllerConfirmPassword,
             obscureText: true,
+            textInputAction: TextInputAction.done,
             decoration: const InputDecoration(
               hintText: 'CONFIRM PASSWORD',
             ),
@@ -285,6 +302,78 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
             },
           ),
         ));
+  }
+
+  String _physicianName(String? uid) {
+    if (uid == null) return '';
+
+    for (final item in physicianItems) {
+      if (item.value == uid && item.child is Text) {
+        return (item.child as Text).data ?? '';
+      }
+    }
+    return '';
+  }
+
+  Widget _physicianDropdown() {
+    final dropdownItems = physicianItems
+        .map(
+          (item) => DropdownMenuItem<String>(
+            value: item.value,
+            child: Text(
+              _physicianName(item.value),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        )
+        .toList();
+
+    final hint = isLoadingPhysicians
+        ? 'LOADING PHYSICIANS...'
+        : physicianItems.isEmpty
+            ? 'NO PHYSICIANS AVAILABLE'
+            : 'SELECT PHYSICIAN';
+
+    return SizedBox(
+      width: 300,
+      child: DropdownButtonFormField<String>(
+        initialValue: physicianUid,
+        isExpanded: true,
+        decoration: const InputDecoration(
+          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          border: OutlineInputBorder(),
+        ),
+        hint: Text(hint, overflow: TextOverflow.ellipsis),
+        onChanged: isLoadingPhysicians || physicianItems.isEmpty
+            ? null
+            : (String? newValue) {
+                setState(() {
+                  physicianUid = newValue;
+                  physician = _physicianName(newValue);
+                });
+              },
+        items: dropdownItems,
+      ),
+    );
+  }
+
+  bool _validateSignUp() {
+    if (_controllerEmail.text.trim().isEmpty ||
+        _controllerPassword.text.isEmpty ||
+        _controllerConfirmPassword.text.isEmpty) {
+      showLoginDialog(context, 'Sign Up Failed', 'Please fill in all fields.');
+      return false;
+    }
+    if (_controllerPassword.text != _controllerConfirmPassword.text) {
+      showLoginDialog(context, 'Sign Up Failed', 'Passwords do not match.');
+      return false;
+    }
+    if (physicianUid == null || physicianUid!.isEmpty) {
+      showLoginDialog(
+          context, 'Sign Up Failed', 'Please select your physician.');
+      return false;
+    }
+    return true;
   }
 
 // Displays link and calls UnifiedAuthService method to send reset email
@@ -335,6 +424,8 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
         width: 350,
         child: FilledButton(
           onPressed: () async {
+            if (!isLogin && !_validateSignUp()) return;
+
             String? instanceId = await fireFetch('InstanceId');
 
             if (instanceId == null) {
@@ -513,68 +604,50 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
       body: Stack(
         children: [
           _decoration(),
-          _loginHeader(),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              // display for sign in screen
-              if (isLogin) ...[
-                Padding(padding: const EdgeInsets.only(bottom: 200)),
-                _entryField('EMAIL', _controllerEmail),
-                _entryField('PASSWORD', _controllerPassword),
-                _forgotPasswordLink(),
-                Padding(
-                  padding: const EdgeInsets.only(top: 50, left: 25, right: 20),
-                ),
-                _submitButton(),
-                _loginOrRegisterButton(),
-              ] else ...[
-                // display for sign up screen
-                Padding(padding: const EdgeInsets.only(bottom: 250)),
-                _entryField('EMAIL', _controllerEmail),
-                _entryField('PASSWORD', _controllerPassword),
-                FlutterPwValidator(
-                    width: 300,
-                    height: 98,
-                    minLength: 8,
-                    uppercaseCharCount: 1,
-                    specialCharCount: 1,
-                    numericCharCount: 2,
-                    onSuccess: () {},
-                    controller: _controllerPassword),
-                _passwordCheck(),
-                DropdownButtonFormField<String>(
-                  padding: EdgeInsets.symmetric(horizontal: 40),
-                  initialValue: physicianUid,
-                  hint: const Text('SELECT PHYSICIAN'),
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      physicianUid = newValue ?? '';
-                      physician = physicianItems
-                          .firstWhere((item) => item.value == newValue,
-                              orElse: () => DropdownMenuItem<String>(
-                                  value: '', child: Text('')))
-                          .child
-                          .toString()
-                          .split("Text(")[1]
-                          .split(')')[0]
-                          .replaceAll('"', "");
-                    });
-                  },
-                  validator: (value) => (value == null || value.isEmpty)
-                      ? 'Please select your physician'
-                      : null,
-                  items: physicianItems,
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 30, left: 25, right: 20),
-                ),
-                _submitButton(),
-                _loginOrRegisterButton(),
-              ],
-            ],
+          SafeArea(
+            child: SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.viewInsetsOf(context).bottom + 32,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: <Widget>[
+                  const SizedBox(height: 245),
+                  _loginHeader(),
+                  if (isLogin) ...[
+                    _entryField('EMAIL', _controllerEmail),
+                    _entryField('PASSWORD', _controllerPassword,
+                        obscureText: true,
+                        textInputAction: TextInputAction.done),
+                    _forgotPasswordLink(),
+                    const SizedBox(height: 50),
+                    _submitButton(),
+                    _loginOrRegisterButton(),
+                  ] else ...[
+                    _entryField('EMAIL', _controllerEmail),
+                    _entryField('PASSWORD', _controllerPassword,
+                        obscureText: true),
+                    FlutterPwValidator(
+                        width: 300,
+                        height: 98,
+                        minLength: 8,
+                        uppercaseCharCount: 1,
+                        specialCharCount: 1,
+                        numericCharCount: 2,
+                        onSuccess: () {},
+                        controller: _controllerPassword),
+                    _passwordCheck(),
+                    _physicianDropdown(),
+                    const SizedBox(height: 30),
+                    _submitButton(),
+                    _loginOrRegisterButton(),
+                  ],
+                ],
+              ),
+            ),
           ),
+          _backButton(),
         ],
       ),
     );
