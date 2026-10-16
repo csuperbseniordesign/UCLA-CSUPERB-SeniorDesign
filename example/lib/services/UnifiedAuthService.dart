@@ -7,6 +7,7 @@ import 'package:telematics_sdk_example/services/user.dart';
 import 'package:telematics_sdk_example/services/telematics_service.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:telematics_sdk/telematics_sdk.dart';
+import 'fire_fetch.dart';
 
 class UnifiedAuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -253,21 +254,22 @@ class UnifiedAuthService {
   }
 
   // Add this method at the top of the class
-  Future<String?> fireFetch(String field) async {
-    try {
-      DatabaseEvent event = await FirebaseDatabase.instance
-          .ref('ApiCreds/wbWd109hew7nEpCr1w02')
-          .once();
+  /// Fetches a value from the Firebase database for a given field.
+  // Future<String?> fireFetch(String field) async {
+  //   try {
+  //     DatabaseEvent event = await FirebaseDatabase.instance
+  //         .ref('ApiCreds/wbWd109hew7nEpCr1w02')
+  //         .once();
 
-      if (event.snapshot.exists) {
-        final data = event.snapshot.value as Map<dynamic, dynamic>;
-        return data[field]?.toString();
-      }
-    } catch (e) {
-      print('Error fetching $field: $e');
-    }
-    return null;
-  }
+  //     if (event.snapshot.exists) {
+  //       final data = event.snapshot.value as Map<dynamic, dynamic>;
+  //       return data[field]?.toString();
+  //     }
+  //   } catch (e) {
+  //     print('Error fetching $field: $e');
+  //   }
+  //   return null;
+  // } 
 
   // Update the getDeviceTokenForUser method
   Future<String?> getDeviceTokenForUser(String? uid, bool isNewUser,
