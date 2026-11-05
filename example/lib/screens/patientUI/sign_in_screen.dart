@@ -527,7 +527,6 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
           if (deviceToken == null) {
             throw Exception('Device token could not be retrieved.');
           }
-          await _auth.login(deviceToken, instanceId: instanceId);
 
           if (!mounted) return;
           Navigator.of(context).pushReplacement(

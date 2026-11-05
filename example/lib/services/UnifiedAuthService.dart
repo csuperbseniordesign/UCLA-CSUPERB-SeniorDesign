@@ -7,6 +7,7 @@ import 'package:telematics_sdk_example/services/user.dart';
 import 'package:telematics_sdk_example/services/telematics_service.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:telematics_sdk/telematics_sdk.dart';
+import 'package:telematics_sdk_example/services/fire_fetch.dart';
 
 class UnifiedAuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -252,26 +253,8 @@ class UnifiedAuthService {
     }
   }
 
-  // Add this method at the top of the class
-  Future<String?> fireFetch(String field) async {
-    try {
-      DatabaseEvent event = await FirebaseDatabase.instance
-          .ref('ApiCreds/wbWd109hew7nEpCr1w02')
-          .once();
-
-      if (event.snapshot.exists) {
-        final data = event.snapshot.value as Map<dynamic, dynamic>;
-        return data[field]?.toString();
-      }
-    } catch (e) {
-      print('Error fetching $field: $e');
-    }
-    return null;
-  }
-
-  // Update the getDeviceTokenForUser method
   Future<String?> getDeviceTokenForUser(String? uid, bool isNewUser,
-      {required String instanceId}) async {
+      {required String instanceId, String? instanceKey}) async {
     if (uid == null) {
       print("UID is null. Cannot retrieve device token.");
       return null;
@@ -287,7 +270,11 @@ class UnifiedAuthService {
         if (data != null && data.containsKey('deviceToken')) {
           final String? deviceToken = data['deviceToken'];
           // Try to login and get access token
-          var loginResponse = await login(deviceToken, instanceId: instanceId);
+          var loginResponse = await login(
+            deviceToken,
+            instanceId: instanceId,
+            instanceKey: instanceKey,
+          );
 
           if (loginResponse != null) {
             if (isNewUser) {
@@ -454,11 +441,15 @@ class UnifiedAuthService {
 
   // Method to login to Damoov with proper headers and rate limiting
   Future<Map<String, dynamic>?> login(String? userId,
-      {required String instanceId}) async {
-    String? instanceKey = await fireFetch('InstanceKey');
-
+      {required String instanceId, String? instanceKey}) async {
     if (userId == null) {
       print("User ID is null. Cannot login.");
+      return null;
+    }
+
+    final resolvedInstanceKey = instanceKey ?? await fireFetch('InstanceKey');
+    if (resolvedInstanceKey == null || resolvedInstanceKey.isEmpty) {
+      print("Failed to get instance key in auth login");
       return null;
     }
 
@@ -483,13 +474,6 @@ class UnifiedAuthService {
       _lastLoginAttempt = DateTime.now();
       var url = Uri.parse('https://user.telematicssdk.com/v1/Auth/Login');
 
-      // Get the instance key
-
-      if (instanceKey == null || instanceKey.isEmpty) {
-        print("Failed to get instance key in auth login");
-        return null;
-      }
-
       var headers = {
         'accept': 'application/json',
         'content-type': 'application/json',
@@ -497,8 +481,10 @@ class UnifiedAuthService {
       };
 
       var body = jsonEncode({
-        'LoginFields': {"Devicetoken": userId},
-        'Password': instanceKey // Use the instance key from Firestore
+        // Damoov expects LoginFields to be a JSON-encoded string, not an
+        // embedded object.
+        'LoginFields': jsonEncode({'Devicetoken': userId}),
+        'Password': resolvedInstanceKey,
       });
 
       var response = await http.post(url, headers: headers, body: body).timeout(
@@ -518,7 +504,8 @@ class UnifiedAuthService {
 
         return data;
       } else {
-        print('Failed to login, status code: ${response.statusCode}');
+        print(
+            'Failed to login, status code: ${response.statusCode}, response: ${response.body}');
         return null;
       }
     } catch (e) {
