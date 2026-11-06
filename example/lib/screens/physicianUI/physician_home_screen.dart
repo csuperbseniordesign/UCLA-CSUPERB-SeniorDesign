@@ -80,9 +80,14 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
 
       for (var i = 0; i < patients.length; i++) {
         final patient = patients[i];
-        final accessToken = patient['accessToken']?.toString() ?? '';
         final deviceToken = patient['deviceToken']?.toString() ?? '';
         final patientKey = patient['key']?.toString() ?? '';
+
+        // Ask UnifiedAuthService for a current token. It checks the stored
+        // UTC expiration and refreshes the token inside the 12-hour window.
+        final accessToken = patientKey.isEmpty
+            ? ''
+            : await _auth.getValidAccessToken(patientKey) ?? '';
 
         String score = '0';
         if (accessToken.isNotEmpty &&
@@ -135,7 +140,8 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
         Map<String, dynamic> data = jsonDecode(response.body);
         statistics = data["Result"]?["SafetyScore"]?.toString() ?? "0";
       } else if (response.statusCode == 401) {
-        final instanceId = await fireFetch('InstanceId'); // grabs Damoov app/group id
+        final instanceId =
+            await fireFetch('InstanceId'); // grabs Damoov app/group id
 
         if (instanceId != null) {
           // read the patients record
@@ -231,7 +237,7 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
     List<String> emails = [];
     if (_patientsList.isNotEmpty && _summaryScores.isNotEmpty) {
       _patientsList.forEach((element) {
-        emails.add(element['email'] + "BREAK" + element['accessToken']);
+        emails.add(element['email'] + "BREAK" + element['key']);
       });
       var map = Map.fromIterables(emails, _summaryScores);
       var mapEntries = map.entries.toList()
@@ -252,7 +258,7 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
       itemCount: _sortedPatients.length,
       itemBuilder: (context, index) {
         String email = _sortedPatients[index].split("BREAK")[0];
-        String token = _sortedPatients[index].split("BREAK")[1];
+        String patientId = _sortedPatients[index].split("BREAK")[1];
         String score = _sortedScores[index];
         Color tileColor = Colors.white;
         print('Raw score: $score');
@@ -273,7 +279,8 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
             subtitle: Text("Summary Safety Score: ${score}"),
             onTap: () {
               Navigator.of(context).push(MaterialPageRoute(
-                  builder: (context) => PatientDisplayScreen(email, token)));
+                  builder: (context) =>
+                      PatientDisplayScreen(email, patientId)));
             },
             shape: Border(
               top: BorderSide(color: const Color.fromARGB(255, 98, 96, 96)),
@@ -291,7 +298,7 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
             var patient = _filteredPatientsList[index];
             String score = patient['summaryScore']?.toString() ?? '0';
             String email = patient['email'] ?? 'No email';
-            String token = patient['accessToken'];
+            String patientId = patient['key']?.toString() ?? '';
             Color tileColor = Colors.white;
 
             print('Raw score: ${score}');
@@ -313,7 +320,8 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
               subtitle: Text("Summary Safety Score: ${score}"),
               onTap: () {
                 Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => PatientDisplayScreen(email, token)));
+                    builder: (context) =>
+                        PatientDisplayScreen(email, patientId)));
               },
               shape: Border(
                 top: BorderSide(color: const Color.fromARGB(255, 98, 96, 96)),
