@@ -13,3 +13,16 @@ build/
 
 Podfile.lock
 pubspec.lock
+
+# ignore .env files
+.env
+*.env
+/.env
+# igtore VS code specifics
+.vscode/*
+!.vscode/launch.json
+!.vscode/task.json
+!.vscode/extensions.json
+
+# ignore iOS specific files
+example/ios/Flutter/ephemeral/
