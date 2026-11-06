@@ -5,9 +5,15 @@ class TokenResponse {
   final String deviceToken;
   final String accessToken;
   final String refreshToken;
+  // Add expiresIn to keep track of token expirations
+  final int expiresIn;
 
   TokenResponse(
-      {this.deviceToken = '', this.accessToken = '', this.refreshToken = ''});
+      {this.deviceToken = '',
+      this.accessToken = '',
+      this.refreshToken = '',
+      this.expiresIn = 0, // added initialization in constructor
+      });
 }
 
 class TelematicsService {
