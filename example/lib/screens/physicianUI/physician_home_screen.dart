@@ -135,10 +135,10 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
         Map<String, dynamic> data = jsonDecode(response.body);
         statistics = data["Result"]?["SafetyScore"]?.toString() ?? "0";
       } else if (response.statusCode == 401) {
-        final instanceId = await fireFetch('InstanceId');
-        final instanceKey = await fireFetch('InstanceKey');
+        final instanceId = await fireFetch('InstanceId'); // grabs Damoov app/group id
 
-        if (instanceId != null && instanceKey != null) {
+        if (instanceId != null) {
+          // read the patients record
           DatabaseEvent event =
               await FirebaseDatabase.instance.ref('patients/$key').once();
 
@@ -147,8 +147,9 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
             String? currentRefreshToken = data['refreshToken'];
 
             if (currentRefreshToken != null) {
+              // request new credentials/token from Damoov API
               var refreshResponse = await _auth.refreshToken(
-                  deviceToken, instanceId, instanceKey);
+                  authToken, currentRefreshToken, instanceId);
 
               if (refreshResponse != null &&
                   refreshResponse['Result'] != null) {
@@ -156,9 +157,12 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
                     refreshResponse['Result']['AccessToken']['Token'];
                 String newRefreshToken =
                     refreshResponse['Result']['RefreshToken'];
+                int expiresIn = int.parse(refreshResponse['Result']
+                        ['AccessToken']['ExpiresIn']
+                    .toString());
 
                 await UnifiedAuthService.updateTokensInFirebase(
-                    key, newAccessToken, newRefreshToken);
+                    key, newAccessToken, newRefreshToken, expiresIn);
 
                 final retryResponse = await client.get(
                   url,

@@ -21,6 +21,14 @@ class UnifiedAuthService {
       Duration(seconds: 30); // More conservative rate limit
   static Map<String, dynamic> _loginCache = {};
 
+  // helper function to convert Damoov's duration (in seconds) to UTC timestamp
+  String accessTokenExpiresAt(int expiresIn) {
+    return DateTime.now()
+        .toUtc()
+        .add(Duration(seconds:expiresIn))
+        .toIso8601String();
+  }
+
   // Converts Firebase User to custom AppUser
   AppUser? _userFromFirebaseUser(User? user) {
     return user != null ? AppUser(uid: user.uid) : null;
@@ -60,6 +68,8 @@ class UnifiedAuthService {
           'deviceToken': tokenResponse.deviceToken,
           'accessToken': tokenResponse.accessToken,
           'refreshToken': tokenResponse.refreshToken,
+          // Store expiration inside firebase record
+          'accessTokenExpiresAt': accessTokenExpiresAt(tokenResponse.expiresIn),
         });
       }
 
@@ -103,6 +113,8 @@ class UnifiedAuthService {
           'deviceToken': tokenResponse.deviceToken,
           'accessToken': tokenResponse.accessToken,
           'refreshToken': tokenResponse.refreshToken,
+          // Store expiration inside firebase record
+          'accessTokenExpiresAt': accessTokenExpiresAt(tokenResponse.expiresIn),
           'gender': gender,
           'birthday': birthday,
           'email': email,
@@ -301,10 +313,13 @@ class UnifiedAuthService {
               String newAccessToken =
                   loginResponse['Result']['AccessToken']['Token'];
               String newRefreshToken = loginResponse['Result']['RefreshToken'];
+              // include expiresIn if returned
+              int expiresIn = int.parse(loginResponse['Result']['AccessToken']['ExpiresIn'].toString(),);
 
               await FirebaseDatabase.instance.ref('patients/$uid').update({
                 'accessToken': newAccessToken,
                 'refreshToken': newRefreshToken,
+                'accessTokenExpiresAt': accessTokenExpiresAt(expiresIn),
               });
             }
 
@@ -930,19 +945,27 @@ class UnifiedAuthService {
   }
 
   static Future<void> updateTokensInFirebase(
-      String patientId, String newAccessToken, String newRefreshToken) async {
+      String patientId,
+      String newAccessToken,
+      String newRefreshToken,
+      int expiresIn) async {
+    final accessTokenExpiresAt = DateTime.now()
+        .toUtc()
+        .add(Duration(seconds: expiresIn))
+        .toIso8601String();
+
     await FirebaseDatabase.instance.ref('patients/$patientId').update({
       'accessToken': newAccessToken,
       'refreshToken': newRefreshToken,
+      'accessTokenExpiresAt': accessTokenExpiresAt,
     });
   }
 
-  // Add this method to handle token retrieval by using auth to check current auth and refresh token
-  // does not use the refresh access token as once it expires the refresh token does not work
   Future<Map<String, dynamic>?> refreshToken(
-      String deviceToken, String instanceId, String instanceKey) async {
+      String accessToken, String refreshToken, String instanceId) async {
     try {
-      var url = Uri.parse('https://user.telematicssdk.com/v1/Auth/Login');
+      var url = Uri.parse(
+          'https://user.telematicssdk.com/v1/Auth/RefreshToken');
 
       var headers = {
         'accept': 'application/json',
@@ -951,24 +974,25 @@ class UnifiedAuthService {
       };
 
       var body = jsonEncode({
-        'LoginFields': {'Devicetoken': deviceToken},
-        'Password': instanceKey
+        'AccessToken': accessToken,
+        'RefreshToken': refreshToken,
       });
 
       var response = await http.post(url, headers: headers, body: body).timeout(
         Duration(seconds: 10),
         onTimeout: () {
-          print("Refresh token request timed out");
+          print("Damoov token refresh request timed out");
           throw TimeoutException('Refresh token request timed out');
         },
       );
 
       if (response.statusCode == 200) {
         Map<String, dynamic> data = jsonDecode(response.body);
-        // According to Damoov docs, check for Result.AccessToken and Result.RefreshToken
+        // Damoov returns a new access token, refresh token, and expiration.
         if (data['Result'] != null &&
             data['Result']['AccessToken'] != null &&
-            data['Result']['RefreshToken'] != null) {
+            data['Result']['RefreshToken'] != null &&
+            data['Result']['AccessToken']['ExpiresIn'] != null) {
           print("Token refresh successful!");
           print(
               "New access token will expire in: ${data['Result']['AccessToken']['ExpiresIn']} seconds");
