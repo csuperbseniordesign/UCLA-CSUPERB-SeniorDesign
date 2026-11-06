@@ -5,19 +5,20 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 class PatientDisplayScreen extends StatefulWidget {
   final String email;
-  final String token;
-  PatientDisplayScreen(this.email, this.token);
+  // Firebase patient IDs are strings, not integers.
+  final String patientId;
 
+  PatientDisplayScreen(this.email, this.patientId);
   @override
   State<StatefulWidget> createState() {
-    return _PatientDisplayScreenState(this.email, this.token);
+    return _PatientDisplayScreenState(this.email, this.patientId);
   }
 }
 
 class _PatientDisplayScreenState extends State<PatientDisplayScreen> {
   String email;
-  String token;
-  _PatientDisplayScreenState(this.email, this.token);
+  String patientId;
+  _PatientDisplayScreenState(this.email, this.patientId);
 
   User? currentUser = FirebaseAuth.instance.currentUser;
   final UnifiedAuthService _auth = UnifiedAuthService();
@@ -26,7 +27,6 @@ class _PatientDisplayScreenState extends State<PatientDisplayScreen> {
   List<Container> totals = [];
   int tripCount = 0;
   List<Padding> scores = [];
-
 
   @override
   void initState() {
@@ -37,7 +37,9 @@ class _PatientDisplayScreenState extends State<PatientDisplayScreen> {
 
   void loadStats() async {
     try {
-      var items = await _auth.fetchStatistics(this.token);
+      // Pass the patient ID; UnifiedAuthService now owns token lookup,
+      // expiration checks, refreshes, and retry behavior.
+      var items = await _auth.fetchStatistics(patientId);
       if (items.isNotEmpty) {
         setState(() {
           stats = items;
@@ -117,47 +119,48 @@ class _PatientDisplayScreenState extends State<PatientDisplayScreen> {
 
   // get the patient's accumulated scores
   void loadScores() async {
-      List<Padding> tempScores = [];
+    List<Padding> tempScores = [];
     try {
-      var items = await _auth.fetchScores(this.token);
+      // Scores use the same patient-ID based authentication flow as stats.
+      var items = await _auth.fetchScores(patientId);
       if (items.isNotEmpty) {
         // setState(() {
-          List<Icon> icons = [
-            Icon(Icons.track_changes),
-            Icon(Icons.traffic),
-            Icon(Icons.speed),
-            Icon(Icons.turn_slight_right),
-            Icon(Icons.system_security_update)
-          ];
-          List<String> score = [
-            "Acceleration\t\t",
-            "Braking\t\t\t\t\t\t\t\t\t\t",
-            "Speeding\t\t\t\t\t\t\t",
-            "Cornering\t\t\t\t\t\t",
-            "Phone Usage "
-          ];
-          for (int i = 0; i < items.length; i++) {
-            Padding pad = new Padding(
-                padding: EdgeInsets.only(top: 10),
-                child: new ListTile(
-                  leading: icons[i],
-                  title: Text(score[i] +
-                      "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t" +
-                      items[i]),
-                  shape: RoundedRectangleBorder(
-                    side: BorderSide(
-                        color: Color.fromARGB(255, 63, 60, 60), width: 1),
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                ));
-            // scores.add(pad);
-            tempScores.add(pad);
-          }
+        List<Icon> icons = [
+          Icon(Icons.track_changes),
+          Icon(Icons.traffic),
+          Icon(Icons.speed),
+          Icon(Icons.turn_slight_right),
+          Icon(Icons.system_security_update)
+        ];
+        List<String> score = [
+          "Acceleration\t\t",
+          "Braking\t\t\t\t\t\t\t\t\t\t",
+          "Speeding\t\t\t\t\t\t\t",
+          "Cornering\t\t\t\t\t\t",
+          "Phone Usage "
+        ];
+        for (int i = 0; i < items.length; i++) {
+          Padding pad = new Padding(
+              padding: EdgeInsets.only(top: 10),
+              child: new ListTile(
+                leading: icons[i],
+                title: Text(score[i] +
+                    "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t" +
+                    items[i]),
+                shape: RoundedRectangleBorder(
+                  side: BorderSide(
+                      color: Color.fromARGB(255, 63, 60, 60), width: 1),
+                  borderRadius: BorderRadius.circular(5),
+                ),
+              ));
+          // scores.add(pad);
+          tempScores.add(pad);
+        }
         // });
 
-          setState(() {
-            scores = tempScores;
-          });
+        setState(() {
+          scores = tempScores;
+        });
       }
     } catch (e) {
       print("Error loading stats: $e");
@@ -170,13 +173,16 @@ class _PatientDisplayScreenState extends State<PatientDisplayScreen> {
       appBar: AppBar(
         title: Text(email),
         flexibleSpace: Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: <Color>[Color.fromARGB(255, 255, 255, 255),Color.fromARGB(255, 51, 110, 159)]),
-      ),
-    ),
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: <Color>[
+                  Color.fromARGB(255, 255, 255, 255),
+                  Color.fromARGB(255, 51, 110, 159)
+                ]),
+          ),
+        ),
       ),
       body: ListView(
         children: [
@@ -208,7 +214,7 @@ class _PatientDisplayScreenState extends State<PatientDisplayScreen> {
                 onPressed: () {
                   Navigator.of(context).push(MaterialPageRoute(
                       builder: (context) =>
-                          PatientTripsScreen(email, token, tripCount)));
+                          PatientTripsScreen(email, patientId, tripCount)));
                 },
                 child: Text(
                   "View More Drive Analytics",
