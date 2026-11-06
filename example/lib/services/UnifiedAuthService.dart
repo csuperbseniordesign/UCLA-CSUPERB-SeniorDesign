@@ -558,6 +558,7 @@ class UnifiedAuthService {
       print("Password reset email sent to $email");
     } catch (e) {
       print("Failed to send password reset email: $e");
+      rethrow;
       // Handle the error appropriately
     }
   }

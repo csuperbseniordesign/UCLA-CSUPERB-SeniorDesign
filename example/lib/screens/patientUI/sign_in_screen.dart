@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:telematics_sdk_example/services/alert_user.dart';
 import 'package:telematics_sdk_example/services/fire_fetch.dart';
@@ -23,6 +24,7 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
   bool isLogin = true;
   bool isConfirmed = false;
   bool isLoading = false;
+  bool passwordVisible = false;
 
   final TextEditingController _controllerEmail = TextEditingController();
   final TextEditingController _controllerPassword = TextEditingController();
@@ -245,9 +247,13 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
   }
 
   // Text fields for either sign in or sign up
-  Widget _entryField(String title, TextEditingController controller,
-      {bool obscureText = false,
-      TextInputAction textInputAction = TextInputAction.next}) {
+  Widget _entryField(
+  String title,
+  TextEditingController controller, {
+  bool obscureText = false,
+  TextInputAction textInputAction = TextInputAction.next,
+  VoidCallback? onTogglePasswordVisibility,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(left: 0),
       child: SizedBox(
@@ -264,6 +270,17 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
           cursorColor: Color.fromARGB(255, 14, 56, 90),
           decoration: InputDecoration(
             hintText: title,
+            suffixIcon: onTogglePasswordVisibility != null
+                ? IconButton(
+                  // Toggle password visibility when the icon is pressed
+                    onPressed: onTogglePasswordVisibility,
+                    icon: Icon(
+                      // Change the icon based on the current state
+                      obscureText ? Icons.visibility_off : Icons.visibility,
+                      ),
+                )
+                : null,
+
             focusedBorder: UnderlineInputBorder(
               borderSide:
                   BorderSide(color: const Color.fromARGB(255, 4, 27, 63)),
@@ -404,11 +421,19 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
         // _showSnackBar()
         _snackBar("Password reset email sent to $email");
         // print('Password reset email sent to $email');
-      } catch (e) {
-        // print('Failed to reset password: $e');
-        _snackBar("Failed to reset password $e");
-        // Handle the error appropriately, such as displaying an error message
+      } on FirebaseAuthException catch(e){
+        if (e.code == 'invalid-email'){
+          _snackBar("Please enter a valid email address.");
+        } else {
+          _snackBar("Unable to send password reset email. Please try again.");
+        }
+
+      } catch(e){
+        _snackBar("Something went wrong. Please try again.");
       }
+
+
+
     } else {
       setState(() {
         errorMessage = 'Please enter your email to reset the password.';
@@ -618,8 +643,14 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
                   if (isLogin) ...[
                     _entryField('EMAIL', _controllerEmail),
                     _entryField('PASSWORD', _controllerPassword,
-                        obscureText: true,
-                        textInputAction: TextInputAction.done),
+                        obscureText: !passwordVisible,
+                        textInputAction: TextInputAction.done,
+                        onTogglePasswordVisibility: () {
+                          setState(() {
+                            passwordVisible = !passwordVisible;
+                          });
+                        },
+                      ),
                     _forgotPasswordLink(),
                     const SizedBox(height: 50),
                     _submitButton(),
