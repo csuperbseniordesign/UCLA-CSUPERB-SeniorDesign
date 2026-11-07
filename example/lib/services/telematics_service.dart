@@ -5,9 +5,15 @@ class TokenResponse {
   final String deviceToken;
   final String accessToken;
   final String refreshToken;
+  // Add expiresIn to keep track of token expirations
+  final int expiresIn;
 
   TokenResponse(
-      {this.deviceToken = '', this.accessToken = '', this.refreshToken = ''});
+      {this.deviceToken = '',
+      this.accessToken = '',
+      this.refreshToken = '',
+      this.expiresIn = 0, // added initialization in constructor
+      });
 }
 
 class TelematicsService {
@@ -49,9 +55,21 @@ class TelematicsService {
         print(responseData['Result']['DeviceToken']);
 
         return TokenResponse(
-          deviceToken: responseData['Result']['DeviceToken'],
+
+          // Used when loggin in or reauth
+          // stable identifier for specific Damoov device/user
+          deviceToken: responseData['Result']['DeviceToken'],  
+
+          // token sent to Damoov API's---short lived
           accessToken: responseData['Result']['AccessToken']['Token'],
+
+          // credential sent to Damoov for refreshing AccessToken.Token/obtai new access token
           refreshToken: responseData['Result']['RefreshToken'],
+
+          // access-token lifetime in seconds, acts as a duration not timestamp
+          // returned by Damoov API
+          expiresIn: responseData['Result']['AccessToken']['ExpiresIn'],
+         
         );
       } else {
         // Handle error

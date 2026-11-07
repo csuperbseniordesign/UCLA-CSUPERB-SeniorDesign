@@ -3,30 +3,30 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:telematics_sdk_example/services/UnifiedAuthService.dart';
 
 class PatientTripsScreen extends StatefulWidget {
   final String email;
-  final String token;
+  final String patientId;
   final int tripCount;
-  PatientTripsScreen(this.email, this.token, this.tripCount);
-  // final UnifiedAuthService _auth = UnifiedAuthService();
+  PatientTripsScreen(this.email, this.patientId, this.tripCount);
 
   @override
   State<StatefulWidget> createState() {
-    return _PatientTripsScreenState(this.email, this.token, this.tripCount);
+    return _PatientTripsScreenState(this.email, this.patientId, this.tripCount);
   }
 }
 
 class _PatientTripsScreenState extends State<PatientTripsScreen> {
   String email;
-  String token;
+  String patientId;
   int tripCount;
   int nightTimeDrivesCount = 0;
   int highSpeedTripsCount = 0;
 
-  _PatientTripsScreenState(this.email, this.token, this.tripCount);
+  _PatientTripsScreenState(this.email, this.patientId, this.tripCount);
   User? currentUser = FirebaseAuth.instance.currentUser;
-  // final UnifiedAuthService _auth = UnifiedAuthService();
+  final UnifiedAuthService _auth = UnifiedAuthService();
 
   List<List<String>> trips = [];
 
@@ -134,7 +134,7 @@ class _PatientTripsScreenState extends State<PatientTripsScreen> {
     }
   }
 
-  Future<List<List<String>>> fetchTrips(String authToken, int tripCount) async {
+  Future<List<List<String>>> fetchTrips(String patientId, int tripCount) async {
     // Clear previous data
     trips.clear();
     startDates.clear();
@@ -177,31 +177,52 @@ class _PatientTripsScreenState extends State<PatientTripsScreen> {
     print("Requesting $requestCount trips (API limit: 50)");
 
     try {
-      final response = await http.post(
-        Uri.parse('https://api.telematicssdk.com/trips/get/v1/'),
-        headers: {
-          'accept': 'application/json',
-          'content-type': 'application/json',
-          'authorization': 'Bearer $authToken'
-        },
-        body: jsonEncode({
-          'StartDate': startDate,
-          'EndDate': endDate,
-          'IncludeDetails': true,
-          'IncludeStatistics': true,
-          'IncludeScores': true,
-          'Locale': 'EN',
-          'UnitSystem':
-              'Si', // Keep as SI and convert manually for more precision
-          'SortBy': 'StartDateUtc',
-          'SortOrder': 'Desc',
-          'Paging': {
-            'Page': 1,
-            'Count': requestCount,
-            'IncludePagingInfo': true
-          }
-        }),
-      );
+      final authToken = await _auth.getValidAccessToken(patientId);
+      if (authToken == null) {
+        print("No Damoov access token found for patient $patientId");
+        return trips;
+      }
+
+      Future<http.Response> request(String token) {
+        return http.post(
+          Uri.parse('https://api.telematicssdk.com/trips/get/v1/'),
+          headers: {
+            'accept': 'application/json',
+            'content-type': 'application/json',
+            'authorization': 'Bearer $token'
+          },
+          body: jsonEncode({
+            'StartDate': startDate,
+            'EndDate': endDate,
+            'IncludeDetails': true,
+            'IncludeStatistics': true,
+            'IncludeScores': true,
+            'Locale': 'EN',
+            'UnitSystem':
+                'Si', // Keep as SI and convert manually for more precision
+            'SortBy': 'StartDateUtc',
+            'SortOrder': 'Desc',
+            'Paging': {
+              'Page': 1,
+              'Count': requestCount,
+              'IncludePagingInfo': true
+            }
+          }),
+        );
+      }
+
+      var response = await request(authToken);
+
+      // If the API rejects the token, refresh once and retry this trip query.
+      if (response.statusCode == 401) {
+        final refreshedToken = await _auth.getValidAccessToken(
+          patientId,
+          forceRefresh: true,
+        );
+        if (refreshedToken != null) {
+          response = await request(refreshedToken);
+        }
+      }
 
       print("Response status: ${response.statusCode}");
 
@@ -374,7 +395,7 @@ class _PatientTripsScreenState extends State<PatientTripsScreen> {
   // get the patient's accumulated totals
   void loadTrips() async {
     try {
-      var items = await fetchTrips(this.token, this.tripCount);
+      var items = await fetchTrips(this.patientId, this.tripCount);
       if (items.isNotEmpty) {
         trips = items;
         // Use the actual number of trips we have data for
