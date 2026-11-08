@@ -45,21 +45,34 @@ class MyApp extends StatelessWidget {
     // returns `AnimatedBuilder` to allow for it to listen for changes (notifyListener())
   
     return AnimatedBuilder(
+
+      // listens for changes through `notifyListeners()` from ThemeController
+      // when the theme changes, it rebuilds MaterialApp
       animation: themeController,
+
       builder: (context, child) {
-        return MaterialApp(
-          title: 'TelematicsSDK Example',
 
-          // light mode
-          theme: ThemeData.light(),
+        return ThemeScope(
+          // Passes existing controller into widget tree
+          // Does NOT create a _new_ controller
+          controller: themeController,
 
-          // dark mode
-          darkTheme: ThemeData.dark(),
-          
-          // reads value from controller
-          themeMode: themeController.themeMode,
+          // Every screen below can access the controller
+          child: MaterialApp(
+        
+            title: 'TelematicsSDK Example',
 
-          home: Wrapper(),
+            // light mode
+            theme: ThemeData.light(),
+
+            // dark mode
+            darkTheme: ThemeData.dark(),
+            
+            // reads value from controller
+            themeMode: themeController.themeMode,
+
+            home: Wrapper(),
+          ),
         );
       },
     );

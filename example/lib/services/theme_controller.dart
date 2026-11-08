@@ -66,3 +66,41 @@ class ThemeController extends ChangeNotifier {
 
   }
 }
+
+// Creates one shared ThemeController so all can use it that needs it
+class ThemeScope extends InheritedNotifier<ThemeController> {
+  const ThemeScope({
+
+    Key? key,
+
+    // controller created in main.dart
+    required ThemeController controller,
+
+    // Every widget below this child can access the shared controller.
+    required Widget child,
+  }): super(
+    key: key,
+    // inheritednotifier listens to the following ChangeNotifier
+    // then when controller calls notifyListeners() the widgets can rebuild
+
+    notifier: controller,
+
+    // normallay the MaterialApp
+    child: child,
+
+  );
+  // finds nearest ThemeScope above the current widget
+  static ThemeController of(BuildContext context) {
+    final scope =
+        context.dependOnInheritedWidgetOfExactType<ThemeScope>();
+
+        // if failed to find ThemeScope, widge placed outside ThemeScope
+        assert(
+          scope != null,
+          'ThemeScope was not found above this widget.',
+        );
+
+      // Assertion confirms that scope and notifier exist
+      return scope!.notifier!;
+  }
+}
