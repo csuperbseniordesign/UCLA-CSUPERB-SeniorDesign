@@ -210,44 +210,54 @@ Widget _signInButton(BuildContext context) {
 class WelcomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    // Reads the appearance currently being displayed
+    final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      body: Stack(
-        children: [
-          _decoration(),
-          _header(),
-          _signInButton(context),
-          // placing appearance controls above landing page content
-          Positioned(
-            top: 30,
-            right: 15,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Switch(
-                  // Reads brightness currently being displayed
-                  // If device starts in dark mode, then starts enabled
-                  value: Theme.of(context).brightness == Brightness.dark,
+      body: Stack(children: [
+        _decoration(),
+        _header(),
+        _signInButton(context),
+        // placing appearance controls above landing page content
+        Positioned(
+          top: 30,
+          right: 15,
+          child: Semantics(
+            // Gives screen readers a meaningful description
+            button: true,
+            label: 'Toggle light or dark mode',
+            toggled: isDarkMode,
 
-                  onChanged: (isDarkMode) {
-                    // Retrieve shared controller given by ThemeScope
-                    final themeController = ThemeScope.of(context);
+            child: Tooltip(
+              // explains the icon-only control when hovered or long-pressed
+              message: 'Toggle light or dark mode',
 
-                    // Save users explicit light or dark choice
-                    themeController.setThemeMode(
-                      isDarkMode ? ThemeMode.dark : ThemeMode.light,
-                    );
-                  },
-                ),
+              child: Switch(
+                // On means Dark mode is currently displayed
+                value: isDarkMode,
 
-                // The label is placed to the right of the switch
-                // That way when the switch is "off", sliding/clicking
-                // slides it right to turn "on"
-                const Text('Dark'),
-              ],
+                // Shows a moon when selected and a sun when unselected
+                thumbIcon: WidgetStateProperty.resolveWith<Icon?>((states) {
+                  if (states.contains(WidgetState.selected)) {
+                    return const Icon(Icons.dark_mode);
+                  }
+
+                  return const Icon(Icons.light_mode);
+                }),
+
+                onChanged: (darkModeEnabled) {
+                  // Retrieve the shared controller from ThemeScope
+                  final themeController = ThemeScope.of(context);
+
+                  // Save the selected light or dark mode
+                  themeController.setThemeMode(
+                    darkModeEnabled ? ThemeMode.dark : ThemeMode.light,
+                  );
+                },
+              ),
             ),
           ),
-        ],
-      ),
+        ),
+      ]),
     );
   }
 }
