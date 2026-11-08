@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:telematics_sdk_example/screens/user_type_screen.dart';
 
+// import to access theme controller/shared preferences
+import 'package:telematics_sdk_example/services/theme_controller.dart';
+
 Widget _decoration() {
   return Stack(
     children: [
@@ -208,7 +211,43 @@ class WelcomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        body: Stack(
-            children: [_decoration(), _header(), _signInButton(context)]));
+      body: Stack(
+        children: [
+          _decoration(),
+          _header(),
+          _signInButton(context),
+          // placing appearance controls above landing page content
+          Positioned(
+            top: 30,
+            right: 15,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Switch(
+                  // Reads brightness currently being displayed
+                  // If device starts in dark mode, then starts enabled
+                  value: Theme.of(context).brightness == Brightness.dark,
+
+                  onChanged: (isDarkMode) {
+                    // Retrieve shared controller given by ThemeScope
+                    final themeController = ThemeScope.of(context);
+
+                    // Save users explicit light or dark choice
+                    themeController.setThemeMode(
+                      isDarkMode ? ThemeMode.dark : ThemeMode.light,
+                    );
+                  },
+                ),
+
+                // The label is placed to the right of the switch
+                // That way when the switch is "off", sliding/clicking
+                // slides it right to turn "on"
+                const Text('Dark'),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
