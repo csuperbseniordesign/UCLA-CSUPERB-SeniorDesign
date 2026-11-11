@@ -14,8 +14,9 @@
 4. Make sure to have a simulator available
     i. run ```flutter devices``` to see what emulators are available
    ii. (iOS) run ```open -a simulator``` (there's probably an Android equivalent, but I don't know it)
+   iii. (Android) install Android Studio, https://developer.android.com/studio/run/managing-avds, then run ```flutter devices```
 
-5. run ```flutter run``` and you're all set 
+6. run ```flutter run``` and you're all set 
 
 ###
 __Basic Project Structure__: 
