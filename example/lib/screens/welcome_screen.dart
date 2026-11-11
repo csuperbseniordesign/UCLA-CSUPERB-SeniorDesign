@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:telematics_sdk_example/screens/user_type_screen.dart';
 
+// import to access theme controller/shared preferences
+import 'package:telematics_sdk_example/services/theme_controller.dart';
+
 Widget _decoration() {
   return Stack(
     children: [
@@ -207,8 +210,54 @@ Widget _signInButton(BuildContext context) {
 class WelcomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    // Reads the appearance currently being displayed
+    final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-        body: Stack(
-            children: [_decoration(), _header(), _signInButton(context)]));
+      body: Stack(children: [
+        _decoration(),
+        _header(),
+        _signInButton(context),
+        // placing appearance controls above landing page content
+        Positioned(
+          top: 30,
+          right: 15,
+          child: Semantics(
+            // Gives screen readers a meaningful description
+            button: true,
+            label: 'Toggle light or dark mode',
+            toggled: isDarkMode,
+
+            child: Tooltip(
+              // explains the icon-only control when hovered or long-pressed
+              message: 'Toggle light or dark mode',
+
+              child: Switch(
+                // On means Dark mode is currently displayed
+                value: isDarkMode,
+
+                // Shows a moon when selected and a sun when unselected
+                thumbIcon: WidgetStateProperty.resolveWith<Icon?>((states) {
+                  if (states.contains(WidgetState.selected)) {
+                    return const Icon(Icons.dark_mode);
+                  }
+
+                  return const Icon(Icons.light_mode);
+                }),
+
+                onChanged: (darkModeEnabled) {
+                  // Retrieve the shared controller from ThemeScope
+                  final themeController = ThemeScope.of(context);
+
+                  // Save the selected light or dark mode
+                  themeController.setThemeMode(
+                    darkModeEnabled ? ThemeMode.dark : ThemeMode.light,
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      ]),
+    );
   }
 }

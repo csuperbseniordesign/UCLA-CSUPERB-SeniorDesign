@@ -27,6 +27,7 @@ dependencies:
   intl_phone_field: ^3.2.0
   flutter_launcher_icons: ^0.14.1
   cloud_firestore: ^5.6.12
+  shared_preferences: ^2.5.6
 
 flutter_icons:
   android: true
