@@ -4,7 +4,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:telematics_sdk_example/screens/welcome_screen.dart';
 import 'package:telematics_sdk_example/services/auth.dart';
 import 'package:telematics_sdk_example/screens/patientUI/settings/patient_profile_screen.dart';
-import 'package:telematics_sdk_example/screens/patientUI/patient_home_screen.dart';
 import 'package:telematics_sdk_example/screens/patientUI/settings/about_app_screen.dart';
 import 'package:telematics_sdk_example/screens/patientUI/settings/privacy_policy_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -26,18 +25,6 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  int _selectedIndex = 1;
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-      if (index == 0) {
-        Navigator.push(context,
-            MaterialPageRoute(builder: (context) => PatientHomeScreen()));
-        // context, MaterialPageRoute(builder: (context) => HomeScreen()));
-      }
-    });
-  }
-
   Future<void> updatePassword(String password) async {
     try {
       await user?.updatePassword(password);
@@ -147,21 +134,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ]),
       ]),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Settings',
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Color.fromARGB(255, 103, 139, 183),
-        onTap: _onItemTapped,
-      ),
     );
   }
 }

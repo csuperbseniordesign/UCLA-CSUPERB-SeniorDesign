@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:telematics_sdk_example/services/user.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:telematics_sdk_example/screens/physicianUI/physician_home_screen.dart';
+import 'package:telematics_sdk_example/widgets/main_navigation.dart';
 import 'package:telematics_sdk_example/services/UnifiedAuthService.dart';
 import 'package:flutter_pw_validator/flutter_pw_validator.dart';
 import 'package:telematics_sdk_example/widgets/show_dialog.dart';
@@ -556,7 +556,7 @@ class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
         if (!mounted) return;
 
         Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => PhysicianHomeScreen()));
+            MaterialPageRoute(builder: (context) => MainNavigation.physician()));
 
         // Stop loading
         setState(() => isLoading = false);
@@ -585,7 +585,7 @@ class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
 
         if (role == "Physician") {
           Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => PhysicianHomeScreen()));
+              MaterialPageRoute(builder: (context) => MainNavigation.physician()));
 
           //   // Stop loading
           setState(() => isLoading = false);

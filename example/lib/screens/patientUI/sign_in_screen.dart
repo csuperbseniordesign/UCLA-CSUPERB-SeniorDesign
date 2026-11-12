@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:telematics_sdk_example/services/alert_user.dart';
 import 'package:telematics_sdk_example/services/fire_fetch.dart';
 import 'package:telematics_sdk_example/services/user.dart';
-import 'package:telematics_sdk_example/screens/patientUI/patient_home_screen.dart';
+import 'package:telematics_sdk_example/widgets/main_navigation.dart';
 import 'package:telematics_sdk_example/services/UnifiedAuthService.dart';
 import 'package:flutter_pw_validator/flutter_pw_validator.dart';
 import 'package:telematics_sdk_example/widgets/show_dialog.dart';
@@ -556,7 +556,7 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
 
           if (!mounted) return;
           Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => PatientHomeScreen()));
+              MaterialPageRoute(builder: (context) => MainNavigation.patient()));
           // Stop loading
           setState(() => isLoading = false);
         } else if (role == 'Physician') {
