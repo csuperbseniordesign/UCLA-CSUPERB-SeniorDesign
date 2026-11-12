@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:telematics_sdk_example/services/user.dart';
-import 'package:telematics_sdk_example/screens/patientUI/patient_home_screen.dart';
+import 'package:telematics_sdk_example/widgets/main_navigation.dart';
 import 'package:telematics_sdk_example/services/UnifiedAuthService.dart';
 import 'package:signature/signature.dart';
 
@@ -300,7 +300,7 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
         if (!mounted) return;
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (context) => PatientHomeScreen(),
+            builder: (context) => MainNavigation.patient(),
           ),
         );
       }
