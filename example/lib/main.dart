@@ -9,6 +9,7 @@ import 'package:telematics_sdk_example/widgets/wrapper.dart';
 // import new shared preferences package
 import 'package:telematics_sdk_example/services/theme_controller.dart';
 
+import 'services/text_size_scale.dart'; //file imported for font size scale value
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,6 +26,9 @@ void main() async {
 
   // load saved preferences (dark/light mode) before the app is displayed
   await themeController.loadThemeMode();
+
+  // Loads saved text scale preference before the app is displayed
+  await loadTextScale();
 
   // run the app with the loaded preferences
   runApp(MyApp(themeController: themeController));
@@ -71,10 +75,22 @@ class MyApp extends StatelessWidget {
             // reads value from controller
             themeMode: themeController.themeMode,
 
+            builder: (context, child) {
+            // Returns 'ValueListenableBuilder' to allow for it to listen for changes (valueListable), rebuilds the text-scaling wrapper when textScale changes
+              return ValueListenableBuilder<double>(
+                valueListenable: textScale, // Listens for changes to textScale's value
+                builder: (context, scaleValue, _) { // Runs builder function using current textScale value
+
+                    // Applies textScale value to text throughout the app
+                    return MediaQuery(data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(scaleValue),),child: child!,);
+                },
+              );
+            },
+
             home: Wrapper(),
           ),
         );
-      },
+      }
     );
   }
 }
