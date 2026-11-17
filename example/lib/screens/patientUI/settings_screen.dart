@@ -9,7 +9,7 @@ import 'package:telematics_sdk_example/screens/patientUI/settings/privacy_policy
 import 'package:url_launcher/url_launcher.dart';
 import 'package:telematics_sdk/telematics_sdk.dart';
 
-import 'package:telematics_sdk_example/text_size_scale.dart'; // File imported for font size scale value
+import 'package:telematics_sdk_example/services/text_size_scale.dart'; // File imported for font size scale value
 
 final User? user = Auth().currentUser;
 var uid;
@@ -88,7 +88,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   divisions: 4, // Divides the slider into 4 parts
                   label: '${(scaleValue * 100).round()}%', // Sets the percentage scale value displayed when adjusting slider
                   onChanged: (newValue) {
+                    
                     textScale.value = newValue; // Sets new text scale value
+                  },
+                  onChangeEnd: (newValue) async {
+                    await setTextScale(newValue); // Saves preference when user is done adjusting the slider
                   },
                 ),
               );

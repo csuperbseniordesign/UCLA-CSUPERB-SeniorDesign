@@ -9,7 +9,7 @@ import 'package:telematics_sdk_example/widgets/wrapper.dart';
 // import new shared preferences package
 import 'package:telematics_sdk_example/services/theme_controller.dart';
 
-import 'text_size_scale.dart'; //file imported for font size scale value
+import 'services/text_size_scale.dart'; //file imported for font size scale value
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,6 +26,9 @@ void main() async {
 
   // load saved preferences (dark/light mode) before the app is displayed
   await themeController.loadThemeMode();
+
+  // Loads saved text scale preference before the app is displayed
+  await loadTextScale();
 
   // run the app with the loaded preferences
   runApp(MyApp(themeController: themeController));
