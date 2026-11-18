@@ -25,13 +25,20 @@ class _PatientHomeScreenState extends State<PatientHomeScreen>
   late StreamSubscription<bool> _onLowerPower;
   late StreamSubscription<TrackLocation> _onLocationChanged;
 
+  /* UNUSED: Only assigned, then copied into _tokenEditingController. It is never displayed or
+     sent anywhere.
+
   var _deviceId = '';
+  */
   var _isSdkEnabled = false;
   var _isAllRequiredPermissionsGranted = false;
   var _isTracking = true;
 
-  final _tokenEditingController = TextEditingController();
+  /* UNUSED: Its text is set once in initPlatformState() but nothing reads it (the Text widget
+     that showed it is already commented out in build()). It is also never disposed.
 
+  final _tokenEditingController = TextEditingController();
+  */
   Timer? _inactivityTimer;
   bool _isTripOngoing = false;
   String _speedInfo = "Waiting for trip to start...";
@@ -39,8 +46,11 @@ class _PatientHomeScreenState extends State<PatientHomeScreen>
   final int inactivityTimeout = 120; // seconds
   bool _isAppInForeground = true;
 
-  final NotificationService notificationService = NotificationService();
+  /* UNUSED: Never used. Every NotificationService method is static and is called through the
+     class name.
 
+  final NotificationService notificationService = NotificationService();
+  */
   @override
   void initState() {
     super.initState();
@@ -68,11 +78,20 @@ class _PatientHomeScreenState extends State<PatientHomeScreen>
     // get Device ID
     final virtualDeviceToken = await _trackingApi.getDeviceId();
 
-    // set decive_id and text field - if empty; disable SDK
+    
+    /* UNUSED: The if-branch only filled _deviceId / _tokenEditingController, which nothing
+       reads, leaving an empty branch. Behaviour is unchanged by the equivalent check
+       below: disable the SDK when there is no device id.
+
+       // set _deviceId and text field - if empty; disable SDK
     if (virtualDeviceToken != null && virtualDeviceToken.isNotEmpty) {
       _deviceId = virtualDeviceToken;
       _tokenEditingController.text = _deviceId;
     } else {
+      await _trackingApi.setEnableSdk(enable: false);
+    }
+    */
+    if (virtualDeviceToken == null || virtualDeviceToken.isEmpty) {
       await _trackingApi.setEnableSdk(enable: false);
     }
     // bool if SDK is enabled

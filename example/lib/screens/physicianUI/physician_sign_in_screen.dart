@@ -1,4 +1,7 @@
+/* UNUSED: Nothing in this file uses Timer, StreamSubscription or other dart:async types.
+
 import 'dart:async';
+*/
 import 'package:flutter/material.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:telematics_sdk_example/services/user.dart';
@@ -16,10 +19,21 @@ class PhysicianSignInScreen extends StatefulWidget {
 }
 
 class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
+  /* UNUSED: Written in several places but never read, no widget displays it.
+
   String? errorMessage = ' ';
+  */
   bool isLogin = true;
+
+  /* UNUSED: Never read or written.
+
   bool isConfirmed = false;
+  */
+
+  /* UNUSED: Set around sign-in and sign-up but never read, so nothing depends on it.
+
   bool isLoading = false;
+  */
 
   final TextEditingController _controllerFirstName = TextEditingController();
   final TextEditingController _controllerLastName = TextEditingController();
@@ -34,10 +48,12 @@ class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
   final UnifiedAuthService _auth = UnifiedAuthService();
 
   String email = '';
+  /* UNUSED: Never used; the values are read from the text controllers.
   String password = '';
   String firstName = '';
   String lastName = '';
   String phone = '';
+  */
   // String clientId = '';
 
   bool _showPasswordValidator = false;
@@ -502,10 +518,14 @@ class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
         _snackBar("Failed to reset password $e");
         // Handle the error appropriately, such as displaying an error message
       }
+    /* UNUSED: errorMessage is never displayed, so this branch did nothing visible (the closing brace below keeps the if-statement intact).
+
     } else {
       setState(() {
         errorMessage = 'Please enter your email to reset the password.';
       });
+    }
+    */
     }
   }
 
@@ -542,7 +562,10 @@ class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
 
   Future<void> createUserWithEmailAndPassword() async {
     try {
+      /* UNUSED: isLoading is never read.
+
       setState(() => isLoading = true);
+      */
       AppUser? user = await _auth.registerPhysician(
         email: _controllerEmail.text,
         password: _controllerPassword.text,
@@ -558,22 +581,32 @@ class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
         Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (context) => MainNavigation.physician()));
 
+        /* UNUSED: isLoading is never read.
+
         // Stop loading
         setState(() => isLoading = false);
+        */
       } else {
         throw Exception(
             'Failed to sign in. Please check your email and password.');
       }
     } on FirebaseAuthException catch (e) {
+      /* UNUSED: errorMessage is never read. The error is printed instead of silently swallowed.
+
       setState(() {
         errorMessage = e.message;
       });
+      */
+      print(e.message);
     }
   }
 
   Future<void> _signIn() async {
     try {
+      /* UNUSED: isLoading is never read.
+
       setState(() => isLoading = true);
+      */
       AppUser? user = await _auth.signInWithEmailAndPassword(
           _controllerEmail.text, _controllerPassword.text);
 
@@ -587,13 +620,20 @@ class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
           Navigator.of(context).pushReplacement(
               MaterialPageRoute(builder: (context) => MainNavigation.physician()));
 
+          /* UNUSED: isLoading is never read.
+
           //   // Stop loading
           setState(() => isLoading = false);
+          */
         } else if (role == "Patient") {
+          /* UNUSED: Only the snack bar has any visible effect; isLoading is never read.
+
           setState(() {
             isLoading = false;
             _snackBar('Patients are not allowed to sign in here.');
           });
+          */
+          _snackBar('Patients are not allowed to sign in here.');
         } else {
           throw Exception("Could not sign you in as Physician");
         }
@@ -604,10 +644,14 @@ class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
             'Failed to sign in. Please check your email and password.');
       }
     } catch (e) {
+      /* UNUSED: errorMessage and isLoading are never read. The error is printed instead ofsilently swallowed.
+
       setState(() {
         errorMessage = e.toString();
         isLoading = false;
       });
+      */
+      print(e.toString());
     }
   }
 
@@ -655,7 +699,10 @@ class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
       body: Stack(
         children: [
           // _decoration(),
+          /* UNUSED: Duplicate: _loginHeader() is added to this Stack twice; the second call a few lines below draws the same header at the same position on top of the decoration.
+          
           _loginHeader(),
+          */
           if (isLogin) ...[
             _signInDecoration(),
             // _loginHeader(),

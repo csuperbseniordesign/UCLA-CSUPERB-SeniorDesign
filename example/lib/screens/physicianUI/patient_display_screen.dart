@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:telematics_sdk_example/screens/physicianUI/patient_trips_screen.dart';
 import 'package:telematics_sdk_example/services/UnifiedAuthService.dart';
+/* UNUSED: Only used by the unused currentUser field below.
+
 import 'package:firebase_auth/firebase_auth.dart';
+*/
 
 class PatientDisplayScreen extends StatefulWidget {
   final String email;
@@ -20,7 +23,10 @@ class _PatientDisplayScreenState extends State<PatientDisplayScreen> {
   String patientId;
   _PatientDisplayScreenState(this.email, this.patientId);
 
+  /* UNUSED: Never read.
+  
   User? currentUser = FirebaseAuth.instance.currentUser;
+  */
   final UnifiedAuthService _auth = UnifiedAuthService();
   List<String> stats = [];
 
