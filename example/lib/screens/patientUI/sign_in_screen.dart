@@ -1,4 +1,8 @@
+/* UNUSED: Nothing in this file uses Timer, StreamSubscription or other dart:async types (Future
+   is already in dart:core).
+
 import 'dart:async';
+*/
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:telematics_sdk_example/services/alert_user.dart';
@@ -10,8 +14,11 @@ import 'package:flutter_pw_validator/flutter_pw_validator.dart';
 import 'package:telematics_sdk_example/widgets/show_dialog.dart';
 import 'package:telematics_sdk_example/screens/patientUI/consent_form_screen.dart';
 
-const String virtualDeviceToken = '';
+/* UNUSED: Never referenced. patient_home_screen.dart declares its own local variable of the same
+   name.
 
+const String virtualDeviceToken = '';
+*/
 class PatientSignInScreen extends StatefulWidget {
   const PatientSignInScreen({Key? key}) : super(key: key);
 
@@ -20,10 +27,22 @@ class PatientSignInScreen extends StatefulWidget {
 }
 
 class _PatientSignInScreenState extends State<PatientSignInScreen> {
+
+  /* UNUSED: Written in several places but never read; no widget displays it.
+
   String? errorMessage = ' ';
+  */
   bool isLogin = true;
+
+  /* UNUSED: Never read or written.
+
   bool isConfirmed = false;
+  */
+
+  /* UNUSED: Set to true/false around sign-in and sign-up but never read, so no spinner or disabled button depends on it.
+
   bool isLoading = false;
+  */
   bool passwordVisible = false;
 
   final TextEditingController _controllerEmail = TextEditingController();
@@ -33,12 +52,21 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
   final UnifiedAuthService _auth = UnifiedAuthService();
 
   String email = '';
+
+  /* UNUSED: Never used; the password is read from _controllerPassword.
+
   String password = '';
+  */
   String physician = '';
+
+  /* UNUSED: Never used. These are physician/registration fields left over from an earlier
+     version of this screen.
+
   String firstName = '';
   String lastName = '';
   String phone = '';
   String clientId = '';
+  */
   String? physicianUid;
   List<DropdownMenuItem<String>> physicianItems = [];
   bool isLoadingPhysicians = true;
@@ -46,7 +74,12 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
   @override
   void initState() {
     super.initState();
+
+    /* UNUSED: Redundant: physicianUid is declared as a nullable String? and is already null.
+
     physicianUid = null;
+    */
+
     loadPhysicians();
   }
 
@@ -428,10 +461,15 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
 
 
 
+    /* UNUSED: errorMessage is never displayed, so this branch did nothing visible (the closing
+       brace below keeps the if-statement intact).
+
     } else {
       setState(() {
         errorMessage = 'Please enter your email to reset the password.';
       });
+    }
+    */
     }
   }
 
@@ -499,7 +537,11 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
   Future<void> createUserWithEmailAndPassword(
       {required String instanceId, required String instanceKey}) async {
     try {
+
+      /* UNUSED: isLoading is never read.
+
       setState(() => isLoading = true);
+      */
 
       // Navigate to consent form instead of directly creating account
       if (!mounted) return;
@@ -516,6 +558,9 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
         ),
       );
 
+      /* UNUSED: isLoading and errorMessage are never read, so these setState calls only caused a
+         rebuild. The error is printed instead of silently swallowed.
+
       setState(() => isLoading = false);
     } catch (e) {
       setState(() {
@@ -523,11 +568,18 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
         isLoading = false;
       });
     }
+      */
+    } catch (e) {
+      print(e.toString());
+    }
   }
 
   Future<void> _signIn({required String instanceId}) async {
     try {
+      /* UNUSED: isLoading is never read.
+
       setState(() => isLoading = true);
+      */
       // sign in with the credientials
       AppUser? user = await _auth.signInWithEmailAndPassword(
           _controllerEmail.text, _controllerPassword.text);
@@ -551,15 +603,23 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
           if (!mounted) return;
           Navigator.of(context).pushReplacement(
               MaterialPageRoute(builder: (context) => MainNavigation.patient()));
+          /* UNUSED: isLoading is never read.
+
           // Stop loading
           setState(() => isLoading = false);
+          */
         } else if (role == 'Physician') {
           // If the role is Physician, but this sign-in method is for Patients,
           // you might want to show an error or redirect to the Physician sign-in page
+
+          /* UNUSED: Only the snack bar has any visible effect; isLoading is never read.
+
           setState(() {
             isLoading = false;
             _snackBar('Physicians are not allowed to sign in here.');
           });
+          */
+          _snackBar('Physicians are not allowed to sign in here.');
         } else {
           throw Exception('Device token could not be retrieved.');
         }
@@ -568,10 +628,15 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
             context, "Login Failed", "Email or Password is incorrect");
       }
     } catch (e) {
+      /* UNUSED: errorMessage and isLoading are never read. The error is printed instead of
+         silently swallowed.
+
       setState(() {
         errorMessage = e.toString();
         isLoading = false;
       });
+      */
+      print(e.toString());
     }
   }
 

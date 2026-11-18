@@ -24,7 +24,11 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> {
   String physician = "";
   bool hasBirthday = false;
   String birthday = "";
+
+  /* UNUSED: Never read or written.
+  
   bool changePassword = false;
+  */
   String gender = "";
   bool hasGender = false;
   // String? physician = "";

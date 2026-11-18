@@ -35,6 +35,11 @@ class UnifiedAuthService {
     return user != null ? AppUser(uid: user.uid) : null;
   }
 
+/* UNUSED: Never called. Patient sign-up uses registerPatient() and physician sign-up uses
+     registerPhysician(); this is an older copy of the same flow (its phone and
+     clientId parameters were never used). TelematicsService.registerUser, which it
+     calls, is still used by registerPatient().
+
   // Register with email, password, and user details for telematics
   Future<AppUser?> registerUser({
     required String email,
@@ -80,6 +85,7 @@ class UnifiedAuthService {
       return null;
     }
   }
+*/
 
   // Register with email, password, and user details for telematics
   Future<AppUser?> registerPatient({
@@ -131,7 +137,11 @@ class UnifiedAuthService {
     }
   }
 
+/* UNUSED: Only ever assigned (inside getPhysicianDropdownMenu, itself unused) and never read.
+
   late final String? selectedPhysicianUid;
+
+*/
 
   Future<List<DropdownMenuItem<String>>> getPhysicianDropdownItems() async {
     List<DropdownMenuItem<String>> items = [];
@@ -177,6 +187,9 @@ class UnifiedAuthService {
     return items;
   }
 
+/* UNUSED: Never called. The sign-up screen uses getPhysicianDropdownItems(); this near-
+     duplicate only differed by setting selectedPhysicianUid, which nothing reads.
+
   Future<List<DropdownMenuItem<String>>> getPhysicianDropdownMenu(
       String currentPhysicianId) async {
     List<DropdownMenuItem<String>> items = [];
@@ -212,6 +225,7 @@ class UnifiedAuthService {
 
     return items;
   }
+*/
 
   Future<AppUser?> registerPhysician({
     required String email,
@@ -528,12 +542,17 @@ class UnifiedAuthService {
     }
   }
 
+/* UNUSED: No caller. Nothing ever clears _loginCache, so a cached login response is reused for
+     the life of the app process. Wire this into sign-out if that is not intended.
+
   // Method to clear login cache (use when needed)
   static void clearLoginCache() {
     _loginCache.clear();
     _lastLoginAttempt = null;
     print("Login cache cleared");
   }
+*/
+
 
   // Method to reset passsword (Firebase side)
   Future<void> resetPassword(String email) async {
@@ -546,6 +565,8 @@ class UnifiedAuthService {
       // Handle the error appropriately
     }
   }
+
+/* UNUSED: No caller; no screen offers an email change.
 
   // Method to change the current user's email
   Future<void> changeEmail(String newEmail) async {
@@ -562,14 +583,21 @@ class UnifiedAuthService {
       print("No user is currently signed in.");
     }
   }
+*/
 
   User? getCurrentUser() {
     return _auth.currentUser;
   }
 
+ /* UNUSED: No caller. Screens use getCurrentUser() or Auth().currentUser instead.
+
   AppUser? getCurrentAppUser() {
     return _userFromFirebaseUser(_auth.currentUser);
   }
+
+*/
+
+ /* UNUSED: No caller. The physician is chosen at sign-up and written by registerPatient().
 
   Future<void> addPhysician(String physician) async {
     User? user = _auth.currentUser;
@@ -579,6 +607,7 @@ class UnifiedAuthService {
           .update({'physician': physician});
     }
   }
+  */
 
   Future<void> addBirthday(String birthday) async {
     User? user = _auth.currentUser;
@@ -596,6 +625,8 @@ class UnifiedAuthService {
     }
   }
 
+  /* UNUSED: No caller. The profile screens call user.updatePassword() directly.
+
   // Method to change the current user's password
   Future<void> changePassword(String newPassword) async {
     User? user = _auth.currentUser;
@@ -611,6 +642,7 @@ class UnifiedAuthService {
       print("No user is currently signed in.");
     }
   }
+  */
 
   // Loads the patient's current Damoov access token and refreshes it when it
   // is missing, inside the 12-hour safety window, or explicitly expired.
@@ -1007,6 +1039,10 @@ class UnifiedAuthService {
     }
   }
 
+/* UNUSED: Never called Token refresh now goes through getValidAccessToken() -> refreshToken(),
+ which use the /Auth/RefreshToken endpoint and store the expiry time
+    this older helper used a different URL and stored nothing.
+
   static Future<Map<String, String>?> refreshAccessToken(
       String refreshToken) async {
     var client = http.Client();
@@ -1040,6 +1076,7 @@ class UnifiedAuthService {
       client.close();
     }
   }
+*/
 
   static Future<void> updateTokensInFirebase(String patientId,
       String newAccessToken, String newRefreshToken, int expiresIn) async {

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
  
+/* UNUSED: Only used by the unused currentUser field below.
 import 'package:firebase_auth/firebase_auth.dart';
+*/
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:telematics_sdk_example/services/UnifiedAuthService.dart';
@@ -30,7 +32,10 @@ class _PatientTripsScreenState extends State<PatientTripsScreen> {
   final SunTimesService _sunTimes = SunTimesService();
  
   _PatientTripsScreenState(this.email, this.patientId, this.tripCount);
+  /* UNUSED: Never read.
+  
   User? currentUser = FirebaseAuth.instance.currentUser;
+  */
   final UnifiedAuthService _auth = UnifiedAuthService();
  
   List<List<String>> trips = [];
@@ -45,7 +50,10 @@ class _PatientTripsScreenState extends State<PatientTripsScreen> {
   List<String> brakings = [];
   List<String> cornerings = [];
   List<String> phoneUsages = [];
+  /* UNUSED: Filled from the API but never shown: the 'Night Driving' row that used it is already
+     commented out in build().
   List<String> nightHours = [];
+  */
   List<String> avgSpeeds = [];
   List<String> aScores = [];
   List<String> bScores = [];
@@ -109,7 +117,10 @@ class _PatientTripsScreenState extends State<PatientTripsScreen> {
     brakings.clear();
     cornerings.clear();
     phoneUsages.clear();
+    /* UNUSED: nightHours is never read (see its declaration).
+
     nightHours.clear();
+    */
     avgSpeeds.clear();
     maxSpeedScores.clear();
     timeOfDayLabels.clear();
@@ -287,10 +298,13 @@ class _PatientTripsScreenState extends State<PatientTripsScreen> {
                         .toString())
                     .toStringAsFixed(2) +
                 " min");
+            /* UNUSED: nightHours is never read (see its declaration). Also removes a parse that could throw if NightHours is missing.
+            
             nightHours.add(
                 double.parse(trip['Statistics']['NightHours'].toString())
                         .toStringAsFixed(2) +
                     " min");
+            */
             durations.add(
                 double.parse(trip['Statistics']['DurationMinutes'].toString())
                         .toStringAsPrecision(2) +

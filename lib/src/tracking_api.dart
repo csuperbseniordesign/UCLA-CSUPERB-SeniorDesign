@@ -1,4 +1,8 @@
+/* REDUNDANT: nothing from dart:async is used in this file. Future and
+   Stream are already available from dart:core, and StreamController (the
+   main dart:async class) is only used in native_call_handler.dart.
 import 'dart:async';
+*/
 import 'dart:convert';
 
 import 'package:flutter/services.dart';
@@ -23,11 +27,17 @@ class TrackingApi {
   OnGetTagsCallback? onGetTags;
 
   TrackingApi() {
+    /* REDUNDANT: this runs in the constructor, before anyone can assign
+       onTagAdd/onTagRemove/onAllTagsRemove/onGetTags on this object, so all
+       four fields are still null here. It copies null into handler fields
+       that are already null, which changes nothing. Callbacks assigned later
+       are never copied to _handler, so they never fire.
     _handler
       ..onTagAdd = onTagAdd
       ..onTagRemove = onTagRemove
       ..onAllTagsRemove = onAllTagsRemove
       ..onGetTags = onGetTags;
+    */
 
     _channel.setMethodCallHandler(_handler.handle);
   }

@@ -96,7 +96,10 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
             startDateString,
             endDateString,
             accessToken,
+            /* UNUSED: Matching argument for the unused deviceToken parameter (the local deviceToken is still used above as a check).
+
             deviceToken,
+            */
             patientKey,
           );
         }
@@ -116,7 +119,11 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
   }
 
   Future<String> fetchSummarySafetyScore(String startDate, String endDate,
+      /* UNUSED: The deviceToken parameter is never used inside this method.
+
       String authToken, String deviceToken, String key) async {
+      */
+      String authToken, String key) async {
     var client = http.Client();
     String statistics = '0';
 

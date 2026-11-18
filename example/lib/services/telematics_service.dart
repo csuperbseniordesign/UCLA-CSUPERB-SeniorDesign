@@ -80,6 +80,10 @@ class TelematicsService {
     }
   }
 
+ 
+  /* UNUSED: Never called. Device-token login is done by UnifiedAuthService.login(), which also
+     handles caching, rate limiting and the timeout.
+
   Future<Map<String, dynamic>> loginWithDeviceToken(String deviceToken,
       {required String instanceKey, required instanceId}) async {
     var body = jsonEncode({
@@ -111,7 +115,11 @@ class TelematicsService {
           'Failed to login with device token: ${response.statusCode}');
     }
   }
+  */
 
+  /* UNUSED: Never called, and it points at a placeholder URL ('path-to-user-profile-endpoint'),
+     so it could not work as written.
+     
   Future<Map<String, dynamic>> getUserProfile({
     required String instanceId,
     required String instanceKey,
@@ -140,4 +148,6 @@ class TelematicsService {
       throw Exception('Exception occurred: $e');
     }
   }
+  */
+
 }

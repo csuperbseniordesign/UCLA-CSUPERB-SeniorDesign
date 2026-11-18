@@ -42,12 +42,19 @@ class NativeCallHandler {
       case 'onLocationChanged':
         _onLocationChangedHandler(call);
         break;
+      /* REDUNDANT: these two cases only call _onNewEventsHandler and
+         _onWrongAccuracyAuthorizationHandler, whose bodies are empty, so
+         matching them does nothing. They also have no stream controller
+         (both are still marked TO DO above). An unmatched method name falls
+         through the switch and the handler still returns Object(), so
+         behavior is identical without them.
       case 'onNewEvents':
         _onNewEventsHandler(call);
         break;
       case 'onWrongAccuracyAuthorization':
         _onWrongAccuracyAuthorizationHandler(call);
         break;
+      */
       case 'onTrackingStateChanged':
         _onTrackingStateChangedHandler(call);
         break;
@@ -123,9 +130,13 @@ class NativeCallHandler {
     _onLocationChanged.add(location);
   }
 
+  /* REDUNDANT: empty-bodied stubs. They read nothing from `call`, emit
+     nothing to any stream, and their only callers were the two switch cases
+     commented out in handle() above, so they lead nowhere.
   void _onNewEventsHandler(MethodCall call) {} //TO DO
 
   void _onWrongAccuracyAuthorizationHandler(MethodCall call) {} //TO DO
+  */
 
   void _onTrackingStateChangedHandler(MethodCall call) {
     final state = call.arguments as bool;
