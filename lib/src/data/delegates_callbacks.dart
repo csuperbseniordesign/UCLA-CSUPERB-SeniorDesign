@@ -7,6 +7,9 @@ class HeartbeatSentResult {
     required this.success,
   });
 
+  /* REDUNDANT: never called. native_call_handler.dart builds this object
+     directly with the HeartbeatSentResult(...) constructor, and this class
+     is not exported from telematics_sdk.dart.
   factory HeartbeatSentResult.fromJson(Map<String, dynamic> json) {
     final state = json['state'] as bool;
     final success = json['success'] as bool;
@@ -16,6 +19,7 @@ class HeartbeatSentResult {
       success: success,
     );
   }
+  */
 }
 
 class SpeedLimitNotificationResult {
@@ -32,6 +36,9 @@ class SpeedLimitNotificationResult {
       required this.longitude,
       required this.date});
 
+  /* REDUNDANT: never called. native_call_handler.dart reads each value from
+     call.arguments and uses the SpeedLimitNotificationResult(...) constructor
+     directly, and this class is not exported from telematics_sdk.dart.
   factory SpeedLimitNotificationResult.fromJson(Map<String, dynamic> json) {
     final speedLimit = json['speedLimit'] as double;
     final speed = json['speed'] as double;
@@ -46,4 +53,5 @@ class SpeedLimitNotificationResult {
         longitude: longitude,
         date: date);
   }
+  */
 }
