@@ -91,32 +91,6 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
             ),
           ),
         ),
-        // This is that invisible rectangle at the top left.
-        Positioned(
-          top: 28,
-          left: -100,
-          child: Container(
-            height: 175,
-            width: 175,
-            decoration: const BoxDecoration(
-              color: Color.fromARGB(255, 255, 255, 255),
-              shape: BoxShape.rectangle,
-            ),
-          ),
-        ),
-        // This is that invisible rectangle at the bottom right.
-        Positioned(
-          bottom: -45,
-          right: -13,
-          child: Container(
-            height: 175,
-            width: 175,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.rectangle,
-            ),
-          ),
-        ),
         // This is for the blue ball-top left.
         Positioned(
           top: 30.0,
@@ -188,7 +162,7 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
         // This belongs to the car logo.
         Positioned(
           top: 100.0,
-          right: 120,
+          right: 130,
           child: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -679,6 +653,7 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
                     _entryField('EMAIL', _controllerEmail),
                     _entryField('PASSWORD', _controllerPassword,
                         obscureText: true),
+                    _passwordCheck(),
                     FlutterPwValidator(
                         width: 300,
                         height: 98,
@@ -688,7 +663,7 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
                         numericCharCount: 2,
                         onSuccess: () {},
                         controller: _controllerPassword),
-                    _passwordCheck(),
+                    const SizedBox(height: 15),
                     _physicianDropdown(),
                     const SizedBox(height: 30),
                     _submitButton(),

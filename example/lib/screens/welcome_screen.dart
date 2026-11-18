@@ -21,32 +21,6 @@ Widget _decoration() {
           ),
         ),
       ),
-      // This is that invisible rectangle at the top left.
-      Positioned(
-        top: 28,
-        left: -100,
-        child: Container(
-          height: 175,
-          width: 175,
-          decoration: const BoxDecoration(
-            color: Color.fromARGB(255, 255, 255, 255),
-            shape: BoxShape.rectangle,
-          ),
-        ),
-      ),
-      // This is that invisible rectangle at the bottom right.
-      Positioned(
-        bottom: -45,
-        right: -13,
-        child: Container(
-          height: 175,
-          width: 175,
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.rectangle,
-          ),
-        ),
-      ),
       // This is for the blue ball-top left.
       Positioned(
         top: 30.0,
@@ -118,7 +92,7 @@ Widget _decoration() {
       // This belongs to the car logo.
       Positioned(
         top: 100.0,
-        right: 90,
+        right: 100,
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -179,7 +153,7 @@ Widget _header() {
 
 Widget _signInButton(BuildContext context) {
   return Padding(
-    padding: const EdgeInsets.only(top: 575, left: 35),
+    padding: const EdgeInsets.only(top: 575, left: 42),
     child: SizedBox(
       height: 70,
       width: 325,
