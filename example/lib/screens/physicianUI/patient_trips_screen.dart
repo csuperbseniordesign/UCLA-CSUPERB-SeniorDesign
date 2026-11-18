@@ -1,35 +1,40 @@
 import 'package:flutter/material.dart';
-
+ 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:telematics_sdk_example/services/UnifiedAuthService.dart';
-
+import 'package:telematics_sdk_example/services/day_night.dart';
+ 
 class PatientTripsScreen extends StatefulWidget {
   final String email;
   final String patientId;
   final int tripCount;
   PatientTripsScreen(this.email, this.patientId, this.tripCount);
-
+ 
   @override
   State<StatefulWidget> createState() {
     return _PatientTripsScreenState(this.email, this.patientId, this.tripCount);
   }
 }
-
+ 
 class _PatientTripsScreenState extends State<PatientTripsScreen> {
   String email;
   String patientId;
   int tripCount;
   int nightTimeDrivesCount = 0;
+  int dayOnlyTripsCount = 0;
+  int totalNightMinutes = 0;
+  int totalDrivingMinutes = 0;
   int highSpeedTripsCount = 0;
-
+  final SunTimesService _sunTimes = SunTimesService();
+ 
   _PatientTripsScreenState(this.email, this.patientId, this.tripCount);
   User? currentUser = FirebaseAuth.instance.currentUser;
   final UnifiedAuthService _auth = UnifiedAuthService();
-
+ 
   List<List<String>> trips = [];
-
+ 
   List<Container> containers = [];
   List<String> startDates = [];
   List<String> endDates = [];
@@ -49,28 +54,30 @@ class _PatientTripsScreenState extends State<PatientTripsScreen> {
   List<String> pScores = [];
   List<String> spScores = [];
   List<String> maxSpeedScores = [];
+  List<String> timeOfDayLabels = [];
+  List<String> nightMinutesLabels = [];
   List<Container> temp = [];
   @override
   void initState() {
     loadTrips();
     super.initState();
   }
-
+ 
   // Helper functions for unit conversion
   double kmToMiles(double km) {
     return km * 0.621371;
   }
-
+ 
   double kmhToMph(double kmh) {
     return kmh * 0.621371;
   }
-
+ 
   // Extract coordinates from address string
   (double, double)? extractCoordinates(String address) {
     try {
       print("\n=== Address Processing ===");
       print("Original address: $address");
-
+ 
       // First, check if coordinates are in the address
       RegExp coordRegex = RegExp(r'(\d+\.\d+),\s*(-?\d+\.\d+)');
       var match = coordRegex.firstMatch(address);
@@ -80,7 +87,7 @@ class _PatientTripsScreenState extends State<PatientTripsScreen> {
         print("Extracted coordinates: ($lat, $lon)");
         return (lat, lon);
       }
-
+ 
       // If no coordinates found, use default LA coordinates
       print("No coordinates found, using default LA coordinates");
       return (34.0522, -118.2437); // Los Angeles coordinates
@@ -89,51 +96,7 @@ class _PatientTripsScreenState extends State<PatientTripsScreen> {
       return null;
     }
   }
-
-  Future<bool> isNightDriving(
-      DateTime tripTime, double latitude, double longitude) async {
-    tripTime = tripTime.toLocal();
-
-    try {
-      final response = await http.get(Uri.parse(
-          'https://api.sunrise-sunset.org/json?lat=$latitude&lng=$longitude&date=${tripTime.year}-${tripTime.month}-${tripTime.day}&formatted=0'));
-
-      if (response.statusCode == 200) {
-        Map<String, dynamic> data = jsonDecode(response.body);
-        if (data['status'] == 'OK') {
-          DateTime sunrise =
-              DateTime.parse(data['results']['sunrise']).toLocal();
-          DateTime sunset = DateTime.parse(data['results']['sunset']).toLocal();
-
-          // Add 30 minutes to sunrise and subtract 30 minutes from sunset for civil twilight
-          DateTime civilDawn = sunrise.add(Duration(minutes: 30));
-          DateTime civilDusk = sunset.subtract(Duration(minutes: 30));
-
-          print("\n=== Night Driving Check ===");
-          print("Trip time: ${tripTime.toString()}");
-          print("Civil dawn: ${civilDawn.toString()}");
-          print("Civil dusk: ${civilDusk.toString()}");
-
-          bool isNight =
-              tripTime.isBefore(civilDawn) || tripTime.isAfter(civilDusk);
-          print("Is night: $isNight");
-
-          return isNight;
-        }
-      }
-
-      print(
-          "Error getting sunrise/sunset times, falling back to default night hours (7 PM - 6 AM)");
-      int hour = tripTime.hour;
-      return hour >= 19 || hour < 6;
-    } catch (e) {
-      print("Error in isNightDriving: $e");
-      // Fallback to default night hours if API call fails
-      int hour = tripTime.hour;
-      return hour >= 19 || hour < 6;
-    }
-  }
-
+ 
   Future<List<List<String>>> fetchTrips(String patientId, int tripCount) async {
     // Clear previous data
     trips.clear();
@@ -149,40 +112,45 @@ class _PatientTripsScreenState extends State<PatientTripsScreen> {
     nightHours.clear();
     avgSpeeds.clear();
     maxSpeedScores.clear();
+    timeOfDayLabels.clear();
+    nightMinutesLabels.clear();
     sScores.clear();
     aScores.clear();
     bScores.clear();
     cScores.clear();
     spScores.clear();
     pScores.clear();
-
+ 
     // Reset counters
     nightTimeDrivesCount = 0;
+    dayOnlyTripsCount = 0;
+    totalNightMinutes = 0;
+    totalDrivingMinutes = 0;
     highSpeedTripsCount = 0;
-
+ 
     // Get current date and time in UTC
     DateTime now = DateTime.now().toUtc();
     // Get date 2 weeks ago in UTC
     DateTime twoWeeksAgo = now.subtract(Duration(days: 14));
-
+ 
     // Format dates in ISO8601 format with UTC timezone
     String startDate = twoWeeksAgo.toIso8601String();
     String endDate = now.toIso8601String();
-
+ 
     print("Fetching trips from $startDate to $endDate");
     print("Requested trip count: $tripCount");
-
+ 
     // Limit the request to maximum 50 trips as per API limitation
     int requestCount = tripCount > 50 ? 50 : tripCount;
     print("Requesting $requestCount trips (API limit: 50)");
-
+ 
     try {
       final authToken = await _auth.getValidAccessToken(patientId);
       if (authToken == null) {
         print("No Damoov access token found for patient $patientId");
         return trips;
       }
-
+ 
       Future<http.Response> request(String token) {
         return http.post(
           Uri.parse('https://api.telematicssdk.com/trips/get/v1/'),
@@ -210,9 +178,9 @@ class _PatientTripsScreenState extends State<PatientTripsScreen> {
           }),
         );
       }
-
+ 
       var response = await request(authToken);
-
+ 
       // If the API rejects the token, refresh once and retry this trip query.
       if (response.statusCode == 401) {
         final refreshedToken = await _auth.getValidAccessToken(
@@ -223,89 +191,95 @@ class _PatientTripsScreenState extends State<PatientTripsScreen> {
           response = await request(refreshedToken);
         }
       }
-
+ 
       print("Response status: ${response.statusCode}");
-
+ 
       if (response.statusCode == 200) {
         Map<String, dynamic> data = jsonDecode(response.body);
         if (data["Result"] != null && data["Result"]['Trips'] != null) {
           int actualTripCount = data["Result"]['Trips'].length;
           print("\n=== Processing $actualTripCount trips ===");
-
+ 
           for (int i = 0; i < actualTripCount; i++) {
             var trip = data["Result"]['Trips'][i];
-
+ 
             // Parse dates
             DateTime startDateTime =
                 DateTime.parse(trip['Data']['StartDate']).toLocal();
             DateTime endDateTime =
                 DateTime.parse(trip['Data']['EndDate']).toLocal();
-
+ 
             print("\n--- Trip ${i + 1} ---");
             print("Start time: ${startDateTime.toString()}");
             print("End time: ${endDateTime.toString()}");
-
+ 
             String startTime = _formatDateTime(startDateTime);
             String endTime = _formatDateTime(endDateTime);
-
+ 
             // Get trip location coordinates
             String startAddress =
                 trip['Data']['Addresses']['Start']['Full'].toString();
             var coords = extractCoordinates(startAddress);
-
-            // Update the night driving check to handle async
-            bool isStartNight = false;
-            bool isEndNight = false;
-
+ 
+            // Split the trip into day minutes and night minutes
+            int dayStartMinute = defaultDayStartMinute;
+            int nightStartMinute = defaultNightStartMinute;
             if (coords != null) {
-              isStartNight =
-                  await isNightDriving(startDateTime, coords.$1, coords.$2);
-              isEndNight =
-                  await isNightDriving(endDateTime, coords.$1, coords.$2);
-
-              print("Start night driving: $isStartNight");
-              print("End night driving: $isEndNight");
-
-              if (isStartNight || isEndNight) {
-                nightTimeDrivesCount++;
-                print("Trip counted as night driving");
-              }
+              (dayStartMinute, nightStartMinute) = await _sunTimes
+                  .getDayWindow(startDateTime, coords.$1, coords.$2);
             }
-
+            DayNightSplit split = splitDayNight(
+              startDateTime,
+              endDateTime,
+              dayStartMinute: dayStartMinute,
+              nightStartMinute: nightStartMinute,
+            );
+            print("Day minutes: ${split.dayMinutes}, "
+                "night minutes: ${split.nightMinutes} (${split.label})");
+ 
+            if (split.hasNightDriving) {
+              nightTimeDrivesCount++;
+            } else {
+              dayOnlyTripsCount++;
+            }
+            totalNightMinutes += split.nightMinutes;
+            totalDrivingMinutes += split.dayMinutes + split.nightMinutes;
+            timeOfDayLabels.add(split.label);
+            nightMinutesLabels.add("${split.nightMinutes} min");
+ 
             // Process speeds
             double maxSpeedKmh =
                 double.parse(trip['Statistics']['MaxSpeed'].toString());
             double maxSpeedMph = kmhToMph(maxSpeedKmh);
             print("Max speed: $maxSpeedKmh km/h = $maxSpeedMph mph");
-
+ 
             // Check if this is a potential highway trip (max speed > 45 mph)
             if (maxSpeedMph > 45.0) {
               highSpeedTripsCount++;
               print(
                   "Trip counted as potential highway trip (max speed: $maxSpeedMph mph)");
             }
-
+ 
             startDates.add(startTime);
             endDates.add(endTime);
-
+ 
             // Add trip details with night driving info
             locations.add(
-                "${trip['Data']['Addresses']['Start']['Full']} to ${trip['Data']['Addresses']['End']['Full']}" +
-                    (isStartNight || isEndNight ? " (Night Drive)" : ""));
-
+                "${trip['Data']['Addresses']['Start']['Full']} to ${trip['Data']['Addresses']['End']['Full']}");
+ 
             // Convert mileage from km to miles
             double mileageKm =
                 double.parse(trip['Statistics']['Mileage'].toString());
             double mileageMiles = kmToMiles(mileageKm);
             mileages.add(mileageMiles.toStringAsPrecision(5) + " mi");
-
+ 
             accelerations.add(trip['Statistics']['AccelerationsCount']
                 .toString()
                 .split(".")[0]);
-
+ 
             brakings.add(
                 trip['Statistics']['BrakingsCount'].toString().split(".")[0]);
-
+ 
             cornerings.add(
                 trip['Statistics']['CorneringsCount'].toString().split(".")[0]);
             phoneUsages.add(double.parse(trip['Statistics']
@@ -321,14 +295,14 @@ class _PatientTripsScreenState extends State<PatientTripsScreen> {
                 double.parse(trip['Statistics']['DurationMinutes'].toString())
                         .toStringAsPrecision(2) +
                     " min");
-
+ 
             // Convert speeds to mph
             double avgSpeedKmh =
                 double.parse(trip['Statistics']['AverageSpeed'].toString());
             double avgSpeedMph = kmhToMph(avgSpeedKmh);
             avgSpeeds.add(avgSpeedMph.toStringAsPrecision(2) + " mph");
             maxSpeedScores.add(maxSpeedMph.toStringAsPrecision(2) + " mph");
-
+ 
             sScores.add(trip['Scores']['Safety'].toString().split(".")[0]);
             aScores
                 .add(trip['Scores']['Acceleration'].toString().split(".")[0]);
@@ -337,7 +311,7 @@ class _PatientTripsScreenState extends State<PatientTripsScreen> {
             spScores.add(trip['Scores']['Speeding'].toString().split(".")[0]);
             pScores.add(trip['Scores']['PhoneUsage'].toString().split(".")[0]);
           }
-
+ 
           print("Successfully processed $actualTripCount trips");
           print(
               "Lists sizes - startDates: ${startDates.length}, endDates: ${endDates.length}, locations: ${locations.length}");
@@ -351,7 +325,7 @@ class _PatientTripsScreenState extends State<PatientTripsScreen> {
       print('Error fetching trips: $e');
       print('Stack trace: ${StackTrace.current}');
     }
-
+ 
     // Add all lists to trips in the correct order
     trips.add(startDates);
     trips.add(endDates);
@@ -370,19 +344,25 @@ class _PatientTripsScreenState extends State<PatientTripsScreen> {
     trips.add(cScores);
     trips.add(spScores);
     trips.add(pScores);
-
+ 
     print("Final trips list size: ${trips.length}");
     print("Each sublist size: ${trips.isNotEmpty ? trips[0].length : 0}");
-
+ 
     return trips;
   }
-
+ 
+  // Percent of total driving minutes that happened at night
+  String _nightPercent() {
+    if (totalDrivingMinutes == 0) return "0";
+    return (totalNightMinutes * 100 / totalDrivingMinutes).toStringAsFixed(0);
+  }
+ 
   // Helper method to format DateTime
   String _formatDateTime(DateTime dt) {
     String period = dt.hour >= 12 ? 'PM' : 'AM';
     int hour = dt.hour > 12 ? dt.hour - 12 : dt.hour;
     hour = hour == 0 ? 12 : hour; // Convert 0 to 12 for 12 AM
-
+ 
     return '${dt.month.toString().padLeft(2, '0')}-'
         '${dt.day.toString().padLeft(2, '0')}-'
         '${dt.year} '
@@ -391,7 +371,7 @@ class _PatientTripsScreenState extends State<PatientTripsScreen> {
         '${dt.second.toString().padLeft(2, '0')} '
         '$period';
   }
-
+ 
   // get the patient's accumulated totals
   void loadTrips() async {
     try {
@@ -402,7 +382,7 @@ class _PatientTripsScreenState extends State<PatientTripsScreen> {
         int actualTrips =
             trips[0].length; // since all lists should have same length
         print("Creating containers for $actualTrips trips");
-
+ 
         for (int i = 0; i < actualTrips; i++) {
           temp.add(Container(
             color: Color.fromARGB(255, 238, 235, 235),
@@ -512,17 +492,26 @@ class _PatientTripsScreenState extends State<PatientTripsScreen> {
                         Text(phoneUsages[i].toString(),
                             textAlign: TextAlign.right)
                       ]),
-                  // Row(
-                  //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  //     children: [
-                  //       Text(
-                  //         "Night Driving",
-                  //         textAlign: TextAlign.left,
-                  //         style: TextStyle(fontWeight: FontWeight.bold),
-                  //       ),
-                  //       Text(nightHours[i].toString(),
-                  //           textAlign: TextAlign.right)
-                  //     ]),
+                  Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          "Time of Day",
+                          textAlign: TextAlign.left,
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        Text(timeOfDayLabels[i], textAlign: TextAlign.right)
+                      ]),
+                  Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          "Night Driving",
+                          textAlign: TextAlign.left,
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        Text(nightMinutesLabels[i], textAlign: TextAlign.right)
+                      ]),
                   Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -606,7 +595,7 @@ class _PatientTripsScreenState extends State<PatientTripsScreen> {
       print("Stack trace: ${StackTrace.current}");
     }
   }
-
+ 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -631,7 +620,11 @@ class _PatientTripsScreenState extends State<PatientTripsScreen> {
                       fontSize: 20,
                     ),
                   ),
-                  Text('Number of Night-Time Trips: $nightTimeDrivesCount'),
+                  Text('Daytime-Only Trips: $dayOnlyTripsCount'),
+                  Text(
+                      'Trips With Night Driving: $nightTimeDrivesCount'),
+                  Text('Time Driven at Night: $totalNightMinutes min '
+                      '(${_nightPercent()}% of driving time)'),
                   Text(
                       'Number of Potential Highway Trips: $highSpeedTripsCount'),
                 ],
@@ -649,3 +642,4 @@ class _PatientTripsScreenState extends State<PatientTripsScreen> {
     );
   }
 }
+ 
