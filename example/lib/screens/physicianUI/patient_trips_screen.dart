@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
  
+/* UNUSED: Only used by the unused currentUser field below.
 import 'package:firebase_auth/firebase_auth.dart';
 */
 import 'dart:convert';
