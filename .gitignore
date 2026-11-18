@@ -26,3 +26,6 @@ pubspec.lock
 
 # ignore iOS specific files
 example/ios/Flutter/ephemeral/
+
+# Widget Preview related
+.widget_preview/

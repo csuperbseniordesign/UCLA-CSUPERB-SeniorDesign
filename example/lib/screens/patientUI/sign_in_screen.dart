@@ -124,32 +124,6 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
             ),
           ),
         ),
-        // This is that invisible rectangle at the top left.
-        Positioned(
-          top: 28,
-          left: -100,
-          child: Container(
-            height: 175,
-            width: 175,
-            decoration: const BoxDecoration(
-              color: Color.fromARGB(255, 255, 255, 255),
-              shape: BoxShape.rectangle,
-            ),
-          ),
-        ),
-        // This is that invisible rectangle at the bottom right.
-        Positioned(
-          bottom: -45,
-          right: -13,
-          child: Container(
-            height: 175,
-            width: 175,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.rectangle,
-            ),
-          ),
-        ),
         // This is for the blue ball-top left.
         Positioned(
           top: 30.0,
@@ -221,7 +195,7 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
         // This belongs to the car logo.
         Positioned(
           top: 100.0,
-          right: 120,
+          right: 130,
           child: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -412,6 +386,26 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
         _controllerPassword.text.isEmpty ||
         _controllerConfirmPassword.text.isEmpty) {
       showLoginDialog(context, 'Sign Up Failed', 'Please fill in all fields.');
+      return false;
+    }
+    // check for minimum length of 8 characters in the password
+    if (_controllerPassword.text.length < 8) {
+      showLoginDialog(context, 'Sign Up Failed', 'Password must be at least 8 characters long.');
+      return false;
+    }
+    // check for at least one uppercase letter in the password
+    if (!_controllerPassword.text.contains(RegExp(r'[A-Z]'))) {
+      showLoginDialog(context, 'Sign Up Failed', 'Password must contain at least one uppercase letter.');
+      return false;
+    }
+    // check for at least two numeric characters in the password
+    if (!_controllerPassword.text.contains(RegExp(r'\d.*\d'))) {
+      showLoginDialog(context, 'Sign Up Failed', 'Password must contain at least two numeric characters.');
+      return false;
+    }
+    // check for at least one special character in the password
+    if (!_controllerPassword.text.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) {
+      showLoginDialog(context, 'Sign Up Failed', 'Password must contain at least one special character.');
       return false;
     }
     if (_controllerPassword.text != _controllerConfirmPassword.text) {
@@ -724,6 +718,7 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
                     _entryField('EMAIL', _controllerEmail),
                     _entryField('PASSWORD', _controllerPassword,
                         obscureText: true),
+                    _passwordCheck(),
                     FlutterPwValidator(
                         width: 300,
                         height: 98,
@@ -733,7 +728,7 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
                         numericCharCount: 2,
                         onSuccess: () {},
                         controller: _controllerPassword),
-                    _passwordCheck(),
+                    const SizedBox(height: 15),
                     _physicianDropdown(),
                     const SizedBox(height: 30),
                     _submitButton(),

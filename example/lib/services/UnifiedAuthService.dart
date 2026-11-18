@@ -279,7 +279,6 @@ class UnifiedAuthService {
     }
   }
 
-
   // Update the getDeviceTokenForUser method
   Future<String?> getDeviceTokenForUser(String? uid, bool isNewUser,
       {required String instanceId}) async {
