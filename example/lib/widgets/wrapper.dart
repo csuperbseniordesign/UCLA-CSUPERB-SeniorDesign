@@ -1,7 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:telematics_sdk_example/screens/patientUI/patient_home_screen.dart';
-import 'package:telematics_sdk_example/screens/physicianUI/physician_home_screen.dart';
+import 'package:telematics_sdk_example/widgets/main_navigation.dart';
 import 'package:telematics_sdk_example/screens/welcome_screen.dart';
 import 'package:telematics_sdk_example/services/UnifiedAuthService.dart';
 
@@ -38,9 +37,9 @@ class Wrapper extends StatelessWidget {
                   print('User role: $role');
 
                   if (role == 'Patient') {
-                    return PatientHomeScreen();
+                    return MainNavigation.patient();
                   } else if (role == 'Physician') {
-                    return PhysicianHomeScreen();
+                    return MainNavigation.physician();
                   } else {
                     print("Unknown role: $role");
                     return WelcomeScreen();

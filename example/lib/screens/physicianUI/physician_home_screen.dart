@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:telematics_sdk_example/screens/physicianUI/physician_settings_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:telematics_sdk_example/services/fire_fetch.dart';
 import 'dart:convert';
@@ -333,35 +332,6 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
     );
   }
 
-  int _selectedIndex = 0;
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-      if (index == 1) {
-        Navigator.push(
-            context, MaterialPageRoute(builder: (context) => SettingsScreen()));
-      }
-    });
-  }
-
-  Widget _bottomNav() {
-    return BottomNavigationBar(
-      items: const <BottomNavigationBarItem>[
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: 'Home',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.settings),
-          label: 'Settings',
-        ),
-      ],
-      currentIndex: _selectedIndex,
-      selectedItemColor: Color.fromARGB(255, 103, 139, 183),
-      onTap: _onItemTapped,
-    );
-  }
-
   Widget _searchBar() {
     return Padding(
       padding: const EdgeInsets.all(10.0),
@@ -477,7 +447,6 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
           ],
         ],
       ),
-      bottomNavigationBar: _bottomNav(),
     );
   }
 }

@@ -4,11 +4,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:telematics_sdk_example/screens/welcome_screen.dart';
 import 'package:telematics_sdk_example/services/auth.dart';
 import 'package:telematics_sdk_example/screens/patientUI/settings/patient_profile_screen.dart';
-import 'package:telematics_sdk_example/screens/patientUI/patient_home_screen.dart';
 import 'package:telematics_sdk_example/screens/patientUI/settings/about_app_screen.dart';
 import 'package:telematics_sdk_example/screens/patientUI/settings/privacy_policy_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:telematics_sdk/telematics_sdk.dart';
+
+import 'package:telematics_sdk_example/services/text_size_scale.dart'; // File imported for font size scale value
 
 final User? user = Auth().currentUser;
 var uid;
@@ -26,18 +27,6 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  int _selectedIndex = 1;
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-      if (index == 0) {
-        Navigator.push(context,
-            MaterialPageRoute(builder: (context) => PatientHomeScreen()));
-        // context, MaterialPageRoute(builder: (context) => HomeScreen()));
-      }
-    });
-  }
-
   Future<void> updatePassword(String password) async {
     try {
       await user?.updatePassword(password);
@@ -86,6 +75,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       builder: (context) => PatientProfileScreen()));
             },
           ),
+          ValueListenableBuilder<double>( // Listen for changes (valueListable), rebuilds the slider and percentage when textScale changes
+            valueListenable: textScale, // Waits for textScale to change
+            builder: (context, scaleValue, _) { // Runs builder function using current textScale value
+              return ListTile(
+                leading: const Icon(Icons.text_fields), // Text Size Icon
+                title: Text('Text Size (${(scaleValue * 100).round()}%)'), // Title + current text scale percentage
+                subtitle: Slider( // Inserts slider
+                  value: scaleValue, // Sets slider's current position
+                  min: 0.8, // Minimum value for text scale
+                  max: 1.2, // Maximum value for text scale
+                  divisions: 4, // Divides the slider into 4 parts
+                  label: '${(scaleValue * 100).round()}%', // Sets the percentage scale value displayed when adjusting slider
+                  onChanged: (newValue) {
+                    
+                    textScale.value = newValue; // Sets new text scale value
+                  },
+                  onChangeEnd: (newValue) async {
+                    await setTextScale(newValue); // Saves preference when user is done adjusting the slider
+                  },
+                ),
+              );
+            },
+
+          ),
+
           const SizedBox(height: 30),
           const ListTile(
             title: Text(
@@ -147,21 +161,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ]),
       ]),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Settings',
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Color.fromARGB(255, 103, 139, 183),
-        onTap: _onItemTapped,
-      ),
     );
   }
 }

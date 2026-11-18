@@ -6,7 +6,6 @@ import 'package:geolocator/geolocator.dart';
 import 'package:telematics_sdk_example/services/notification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:telematics_sdk/telematics_sdk.dart';
-import 'package:telematics_sdk_example/screens/patientUI/settings_screen.dart';
 import 'package:telematics_sdk_example/screens/patientUI/tutorial_screen.dart';
 
 const _sizedBoxSpace = SizedBox(height: 24);
@@ -97,17 +96,6 @@ class _PatientHomeScreenState extends State<PatientHomeScreen>
     }
 
     setState(() {});
-  }
-
-  int _selectedIndex = 0;
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-      if (index == 1) {
-        Navigator.push(
-            context, MaterialPageRoute(builder: (context) => SettingsScreen()));
-      }
-    });
   }
 
   Widget _logo() {
@@ -212,21 +200,6 @@ class _PatientHomeScreenState extends State<PatientHomeScreen>
 
           _sizedBoxSpace,
         ],
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Settings',
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Color.fromARGB(255, 103, 139, 183),
-        onTap: _onItemTapped,
       ),
     );
   }
