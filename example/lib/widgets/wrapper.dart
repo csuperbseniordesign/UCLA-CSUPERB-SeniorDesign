@@ -1,12 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:telematics_sdk_example/widgets/main_navigation.dart';
 import 'package:telematics_sdk_example/screens/welcome_screen.dart';
-import 'package:telematics_sdk_example/services/UnifiedAuthService.dart';
 
 class Wrapper extends StatelessWidget {
-  final UnifiedAuthService _auth = UnifiedAuthService();
-
   Wrapper({super.key});
 
   @override
@@ -50,6 +48,41 @@ class Wrapper extends StatelessWidget {
           }
         },
       ),
+    );
+  }
+
+  Widget _buildHomeForUser(String uid) {
+    return StreamBuilder<DatabaseEvent>(
+      stream: FirebaseDatabase.instance.ref('patients/$uid').onValue,
+      builder: (context, patientSnapshot) {
+        if (patientSnapshot.hasError) {
+          return const Center(child: Text('Could not retrieve user role.'));
+        }
+
+        if (patientSnapshot.data?.snapshot.exists == true) {
+          return PatientHomeScreen();
+        }
+
+        return StreamBuilder<DatabaseEvent>(
+          stream: FirebaseDatabase.instance.ref('physicians/$uid').onValue,
+          builder: (context, physicianSnapshot) {
+            if (physicianSnapshot.hasError) {
+              return const Center(child: Text('Could not retrieve user role.'));
+            }
+
+            if (physicianSnapshot.data?.snapshot.exists == true) {
+              return PhysicianHomeScreen();
+            }
+
+            if (patientSnapshot.connectionState == ConnectionState.waiting ||
+                physicianSnapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            return WelcomeScreen();
+          },
+        );
+      },
     );
   }
 }

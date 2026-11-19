@@ -288,14 +288,12 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
           user.uid,
           true,
           instanceId: widget.instanceId,
+          instanceKey: widget.instanceKey,
         );
 
         if (deviceToken == null) {
           throw Exception('Device token could not be retrieved.');
         }
-
-        if (!mounted) return;
-        await _auth.login(deviceToken, instanceId: widget.instanceId);
 
         if (!mounted) return;
         Navigator.of(context).pushReplacement(
