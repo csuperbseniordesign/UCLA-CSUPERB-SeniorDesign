@@ -92,7 +92,7 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
             const SizedBox(height: 20),
             _buildSection(
               'INTRODUCTION',
-              'Dr. [Insert Full Name], from the Department of [Insert Department Name] at the University of California, Los Angeles, is conducting a research study. This study is being funded by the National Institutes of Health (NIH), CSUBIOTECH, and the Department of Education. You were selected as a possible participant because you are a glaucoma patient with a smartphone capable of running our study app. Your participation in this research study is voluntary.',
+              'Dr Kouros Nouri-Mahdavi, from the Department of Ophthalmology at the University of California, Los Angeles, is conducting a research study. This study is being funded by the National Institutes of Health (NIH) and CSUBIOTECH. You were selected as a possible participant because you are a glaucoma patient with a smartphone capable of running our study app. Your participation in this research study is voluntary.',
             ),
             _buildSection(
               'WHAT SHOULD I KNOW ABOUT A RESEARCH STUDY?',
@@ -142,11 +142,7 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
             ),
             _buildSection(
               'WHO CAN I CONTACT IF I HAVE QUESTIONS ABOUT THIS STUDY?',
-              '• The research team: Contact Dr. [Insert PI Name] at [Insert Phone/Email Info]\n'
-                  '• UCLA Office of the Human Research Protection Program (OHRPP):\n'
-                  '  Phone: (310) 206-2040\n'
-                  '  Email: cscsulaseniordesign@gmail.com\n'
-                  '  Mail: Box 951406, Los Angeles, CA 90095-1406',
+              '• The research team: Contact Contact Kouros Nouri-Mahdavi, MD (Principal Investigator) or Jacky Kwong, PhD (Clinical Research Coordinator) at mkkwong@mednet.ucla.edu',
             ),
             _buildSection(
               'WHAT ARE MY RIGHTS IF I TAKE PART IN THIS STUDY?',
