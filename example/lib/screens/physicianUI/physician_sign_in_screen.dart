@@ -93,32 +93,6 @@ class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
             ),
           ),
         ),
-        // This is that invisible rectangle at the top left.
-        Positioned(
-          top: 28,
-          left: -100,
-          child: Container(
-            height: 175,
-            width: 175,
-            decoration: const BoxDecoration(
-              color: Color.fromARGB(255, 255, 255, 255),
-              shape: BoxShape.rectangle,
-            ),
-          ),
-        ),
-        // This is that invisible rectangle at the bottom right.
-        Positioned(
-          bottom: -45,
-          right: -13,
-          child: Container(
-            height: 175,
-            width: 175,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.rectangle,
-            ),
-          ),
-        ),
         // This is for the blue ball-top left.
         Positioned(
           top: 30.0,
@@ -232,32 +206,6 @@ class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
             ),
           ),
         ),
-        // This is that invisible rectangle at the top left.
-        Positioned(
-          top: 28,
-          left: -100,
-          child: Container(
-            height: 175,
-            width: 175,
-            decoration: const BoxDecoration(
-              color: Color.fromARGB(255, 255, 255, 255),
-              shape: BoxShape.rectangle,
-            ),
-          ),
-        ),
-        // This is that invisible rectangle at the bottom right.
-        Positioned(
-          bottom: -45,
-          right: -13,
-          child: Container(
-            height: 175,
-            width: 175,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.rectangle,
-            ),
-          ),
-        ),
         // This is for the blue ball-top left.
         Positioned(
           top: 30.0,
@@ -329,7 +277,8 @@ class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
         // This belongs to the car logo.
         Positioned(
           top: 100.0,
-          right: 120,
+          left: 0,
+          right: 0,
           child: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -535,7 +484,7 @@ class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
 
   Widget _submitButton() {
     return Padding(
-      padding: const EdgeInsets.only(top: 30, left: 25, right: 20),
+      padding: const EdgeInsets.only(top: 30, left: 20, right: 20),
       child: SizedBox(
         height: 50,
         width: 350,
@@ -710,51 +659,54 @@ class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
             _decoration(),
           ],
           _loginHeader(),
-          Column(
-            // space
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              // Padding(padding: const EdgeInsets.only(bottom: 200)),
-              if (isLogin) ...[
-                Padding(padding: const EdgeInsets.only(bottom: 200)),
-                _entryField('EMAIL', _controllerEmail),
-                Padding(
-                  padding: const EdgeInsets.only(top: 20, left: 25, right: 20),
-                ),
-                _entryField('PASSWORD', _controllerPassword),
-                _forgotPasswordLink(),
-                Padding(
-                  padding: const EdgeInsets.only(top: 50, left: 25, right: 20),
-                ),
-                // Padding(padding: const EdgeInsets.only(bottom: 50)),
-                _submitButton(),
-                _loginOrRegisterButton(),
-              ] else ...[
-                _entryField('EMAIL', _controllerEmail),
-                _entryField('PASSWORD', _controllerPassword,
-                    focusNode: _passwordFocusNode),
-                if (_showPasswordValidator)
-                  FlutterPwValidator(
-                      width: 300,
-                      height: 98,
-                      minLength: 8,
-                      uppercaseCharCount: 1,
-                      specialCharCount: 1,
-                      numericCharCount: 2,
-                      onSuccess: () {},
-                      controller: _controllerPassword),
-                _passwordCheck(),
-                // _entryField('CONFIRM PASSWORD', _controllerConfirmPassword),
-                _entryField('FIRST NAME', _controllerFirstName),
-                _entryField('LAST NAME', _controllerLastName),
-                _phoneField('PHONE', _controllerPhone),
-                _entryField('NPI', _controllerNPI),
-                _entryField('ORG. NAME', _controllerOrgName),
-                _submitButton(),
-                _loginOrRegisterButton(),
+          Center(
+            child: Column(
+              // space
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                // Padding(padding: const EdgeInsets.only(bottom: 200)),
+                if (isLogin) ...[
+                  Padding(padding: const EdgeInsets.only(bottom: 50)),
+                  _entryField('EMAIL', _controllerEmail),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 20, left: 25, right: 20),
+                  ),
+                  _entryField('PASSWORD', _controllerPassword),
+                  const SizedBox(height: 10),
+                  _forgotPasswordLink(),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 0, left: 25, right: 20),
+                  ),
+                  // Padding(padding: const EdgeInsets.only(bottom: 50)),
+                  _submitButton(),
+                  _loginOrRegisterButton(),
+                ] else ...[
+                  _entryField('EMAIL', _controllerEmail),
+                  _entryField('PASSWORD', _controllerPassword,
+                      focusNode: _passwordFocusNode),
+                  if (_showPasswordValidator)
+                    FlutterPwValidator(
+                        width: 300,
+                        height: 98,
+                        minLength: 8,
+                        uppercaseCharCount: 1,
+                        specialCharCount: 1,
+                        numericCharCount: 2,
+                        onSuccess: () {},
+                        controller: _controllerPassword),
+                  _passwordCheck(),
+                  // _entryField('CONFIRM PASSWORD', _controllerConfirmPassword),
+                  _entryField('FIRST NAME', _controllerFirstName),
+                  _entryField('LAST NAME', _controllerLastName),
+                  _phoneField('PHONE', _controllerPhone),
+                  _entryField('NPI', _controllerNPI),
+                  _entryField('ORG. NAME', _controllerOrgName),
+                  _submitButton(),
+                  _loginOrRegisterButton(),
+                ],
               ],
-            ],
+            ),
           ),
           _backButton(),
         ],
