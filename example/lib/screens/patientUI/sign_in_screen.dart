@@ -1,16 +1,24 @@
+/* UNUSED: Nothing in this file uses Timer, StreamSubscription or other dart:async types (Future
+   is already in dart:core).
+
 import 'dart:async';
+*/
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:telematics_sdk_example/services/alert_user.dart';
 import 'package:telematics_sdk_example/services/fire_fetch.dart';
 import 'package:telematics_sdk_example/services/user.dart';
-import 'package:telematics_sdk_example/screens/patientUI/patient_home_screen.dart';
+import 'package:telematics_sdk_example/widgets/main_navigation.dart';
 import 'package:telematics_sdk_example/services/UnifiedAuthService.dart';
 import 'package:flutter_pw_validator/flutter_pw_validator.dart';
 import 'package:telematics_sdk_example/widgets/show_dialog.dart';
 import 'package:telematics_sdk_example/screens/patientUI/consent_form_screen.dart';
 
-const String virtualDeviceToken = '';
+/* UNUSED: Never referenced. patient_home_screen.dart declares its own local variable of the same
+   name.
 
+const String virtualDeviceToken = '';
+*/
 class PatientSignInScreen extends StatefulWidget {
   const PatientSignInScreen({Key? key}) : super(key: key);
 
@@ -19,10 +27,23 @@ class PatientSignInScreen extends StatefulWidget {
 }
 
 class _PatientSignInScreenState extends State<PatientSignInScreen> {
+
+  /* UNUSED: Written in several places but never read; no widget displays it.
+
   String? errorMessage = ' ';
+  */
   bool isLogin = true;
+
+  /* UNUSED: Never read or written.
+
   bool isConfirmed = false;
+  */
+
+  /* UNUSED: Set to true/false around sign-in and sign-up but never read, so no spinner or disabled button depends on it.
+
   bool isLoading = false;
+  */
+  bool passwordVisible = false;
 
   final TextEditingController _controllerEmail = TextEditingController();
   final TextEditingController _controllerPassword = TextEditingController();
@@ -31,12 +52,21 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
   final UnifiedAuthService _auth = UnifiedAuthService();
 
   String email = '';
+
+  /* UNUSED: Never used; the password is read from _controllerPassword.
+
   String password = '';
+  */
   String physician = '';
+
+  /* UNUSED: Never used. These are physician/registration fields left over from an earlier
+     version of this screen.
+
   String firstName = '';
   String lastName = '';
   String phone = '';
   String clientId = '';
+  */
   String? physicianUid;
   List<DropdownMenuItem<String>> physicianItems = [];
   bool isLoadingPhysicians = true;
@@ -44,7 +74,12 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
   @override
   void initState() {
     super.initState();
+
+    /* UNUSED: Redundant: physicianUid is declared as a nullable String? and is already null.
+
     physicianUid = null;
+    */
+
     loadPhysicians();
   }
 
@@ -86,32 +121,6 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
                   width: 5,
                 ),
               ),
-            ),
-          ),
-        ),
-        // This is that invisible rectangle at the top left.
-        Positioned(
-          top: 28,
-          left: -100,
-          child: Container(
-            height: 175,
-            width: 175,
-            decoration: const BoxDecoration(
-              color: Color.fromARGB(255, 255, 255, 255),
-              shape: BoxShape.rectangle,
-            ),
-          ),
-        ),
-        // This is that invisible rectangle at the bottom right.
-        Positioned(
-          bottom: -45,
-          right: -13,
-          child: Container(
-            height: 175,
-            width: 175,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.rectangle,
             ),
           ),
         ),
@@ -186,7 +195,7 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
         // This belongs to the car logo.
         Positioned(
           top: 100.0,
-          right: 120,
+          right: 130,
           child: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -245,9 +254,13 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
   }
 
   // Text fields for either sign in or sign up
-  Widget _entryField(String title, TextEditingController controller,
-      {bool obscureText = false,
-      TextInputAction textInputAction = TextInputAction.next}) {
+  Widget _entryField(
+  String title,
+  TextEditingController controller, {
+  bool obscureText = false,
+  TextInputAction textInputAction = TextInputAction.next,
+  VoidCallback? onTogglePasswordVisibility,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(left: 0),
       child: SizedBox(
@@ -264,6 +277,17 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
           cursorColor: Color.fromARGB(255, 14, 56, 90),
           decoration: InputDecoration(
             hintText: title,
+            suffixIcon: onTogglePasswordVisibility != null
+                ? IconButton(
+                  // Toggle password visibility when the icon is pressed
+                    onPressed: onTogglePasswordVisibility,
+                    icon: Icon(
+                      // Change the icon based on the current state
+                      obscureText ? Icons.visibility_off : Icons.visibility,
+                      ),
+                )
+                : null,
+
             focusedBorder: UnderlineInputBorder(
               borderSide:
                   BorderSide(color: const Color.fromARGB(255, 4, 27, 63)),
@@ -364,6 +388,26 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
       showLoginDialog(context, 'Sign Up Failed', 'Please fill in all fields.');
       return false;
     }
+    // check for minimum length of 8 characters in the password
+    if (_controllerPassword.text.length < 8) {
+      showLoginDialog(context, 'Sign Up Failed', 'Password must be at least 8 characters long.');
+      return false;
+    }
+    // check for at least one uppercase letter in the password
+    if (!_controllerPassword.text.contains(RegExp(r'[A-Z]'))) {
+      showLoginDialog(context, 'Sign Up Failed', 'Password must contain at least one uppercase letter.');
+      return false;
+    }
+    // check for at least two numeric characters in the password
+    if (!_controllerPassword.text.contains(RegExp(r'\d.*\d'))) {
+      showLoginDialog(context, 'Sign Up Failed', 'Password must contain at least two numeric characters.');
+      return false;
+    }
+    // check for at least one special character in the password
+    if (!_controllerPassword.text.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) {
+      showLoginDialog(context, 'Sign Up Failed', 'Password must contain at least one special character.');
+      return false;
+    }
     if (_controllerPassword.text != _controllerConfirmPassword.text) {
       showLoginDialog(context, 'Sign Up Failed', 'Passwords do not match.');
       return false;
@@ -404,15 +448,28 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
         // _showSnackBar()
         _snackBar("Password reset email sent to $email");
         // print('Password reset email sent to $email');
-      } catch (e) {
-        // print('Failed to reset password: $e');
-        _snackBar("Failed to reset password $e");
-        // Handle the error appropriately, such as displaying an error message
+      } on FirebaseAuthException catch(e){
+        if (e.code == 'invalid-email'){
+          _snackBar("Please enter a valid email address.");
+        } else {
+          _snackBar("Unable to send password reset email. Please try again.");
+        }
+
+      } catch(e){
+        _snackBar("Something went wrong. Please try again.");
       }
+
+
+
+    /* UNUSED: errorMessage is never displayed, so this branch did nothing visible (the closing
+       brace below keeps the if-statement intact).
+
     } else {
       setState(() {
         errorMessage = 'Please enter your email to reset the password.';
       });
+    }
+    */
     }
   }
 
@@ -480,7 +537,11 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
   Future<void> createUserWithEmailAndPassword(
       {required String instanceId, required String instanceKey}) async {
     try {
+
+      /* UNUSED: isLoading is never read.
+
       setState(() => isLoading = true);
+      */
 
       // Navigate to consent form instead of directly creating account
       if (!mounted) return;
@@ -497,6 +558,9 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
         ),
       );
 
+      /* UNUSED: isLoading and errorMessage are never read, so these setState calls only caused a
+         rebuild. The error is printed instead of silently swallowed.
+
       setState(() => isLoading = false);
     } catch (e) {
       setState(() {
@@ -504,11 +568,18 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
         isLoading = false;
       });
     }
+      */
+    } catch (e) {
+      print(e.toString());
+    }
   }
 
   Future<void> _signIn({required String instanceId}) async {
     try {
+      /* UNUSED: isLoading is never read.
+
       setState(() => isLoading = true);
+      */
       // sign in with the credientials
       AppUser? user = await _auth.signInWithEmailAndPassword(
           _controllerEmail.text, _controllerPassword.text);
@@ -530,16 +601,24 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
 
           if (!mounted) return;
           Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => PatientHomeScreen()));
+              MaterialPageRoute(builder: (context) => MainNavigation.patient()));
+          /* UNUSED: isLoading is never read.
+
           // Stop loading
           setState(() => isLoading = false);
+          */
         } else if (role == 'Physician') {
           // If the role is Physician, but this sign-in method is for Patients,
           // you might want to show an error or redirect to the Physician sign-in page
+
+          /* UNUSED: Only the snack bar has any visible effect; isLoading is never read.
+
           setState(() {
             isLoading = false;
             _snackBar('Physicians are not allowed to sign in here.');
           });
+          */
+          _snackBar('Physicians are not allowed to sign in here.');
         } else {
           throw Exception('Device token could not be retrieved.');
         }
@@ -548,10 +627,15 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
             context, "Login Failed", "Email or Password is incorrect");
       }
     } catch (e) {
+      /* UNUSED: errorMessage and isLoading are never read. The error is printed instead of
+         silently swallowed.
+
       setState(() {
         errorMessage = e.toString();
         isLoading = false;
       });
+      */
+      print(e.toString());
     }
   }
 
@@ -617,8 +701,14 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
                   if (isLogin) ...[
                     _entryField('EMAIL', _controllerEmail),
                     _entryField('PASSWORD', _controllerPassword,
-                        obscureText: true,
-                        textInputAction: TextInputAction.done),
+                        obscureText: !passwordVisible,
+                        textInputAction: TextInputAction.done,
+                        onTogglePasswordVisibility: () {
+                          setState(() {
+                            passwordVisible = !passwordVisible;
+                          });
+                        },
+                      ),
                     _forgotPasswordLink(),
                     const SizedBox(height: 50),
                     _submitButton(),
@@ -627,6 +717,7 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
                     _entryField('EMAIL', _controllerEmail),
                     _entryField('PASSWORD', _controllerPassword,
                         obscureText: true),
+                    _passwordCheck(),
                     FlutterPwValidator(
                         width: 300,
                         height: 98,
@@ -636,7 +727,7 @@ class _PatientSignInScreenState extends State<PatientSignInScreen> {
                         numericCharCount: 2,
                         onSuccess: () {},
                         controller: _controllerPassword),
-                    _passwordCheck(),
+                    const SizedBox(height: 15),
                     _physicianDropdown(),
                     const SizedBox(height: 30),
                     _submitButton(),

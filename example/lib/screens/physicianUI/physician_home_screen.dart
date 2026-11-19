@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:telematics_sdk_example/screens/physicianUI/physician_settings_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:telematics_sdk_example/services/fire_fetch.dart';
 import 'dart:convert';
@@ -80,9 +79,14 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
 
       for (var i = 0; i < patients.length; i++) {
         final patient = patients[i];
-        final accessToken = patient['accessToken']?.toString() ?? '';
         final deviceToken = patient['deviceToken']?.toString() ?? '';
         final patientKey = patient['key']?.toString() ?? '';
+
+        // Ask UnifiedAuthService for a current token. It checks the stored
+        // UTC expiration and refreshes the token inside the 12-hour window.
+        final accessToken = patientKey.isEmpty
+            ? ''
+            : await _auth.getValidAccessToken(patientKey) ?? '';
 
         String score = '0';
         if (accessToken.isNotEmpty &&
@@ -92,7 +96,10 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
             startDateString,
             endDateString,
             accessToken,
+            /* UNUSED: Matching argument for the unused deviceToken parameter (the local deviceToken is still used above as a check).
+
             deviceToken,
+            */
             patientKey,
           );
         }
@@ -112,7 +119,11 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
   }
 
   Future<String> fetchSummarySafetyScore(String startDate, String endDate,
+      /* UNUSED: The deviceToken parameter is never used inside this method.
+
       String authToken, String deviceToken, String key) async {
+      */
+      String authToken, String key) async {
     var client = http.Client();
     String statistics = '0';
 
@@ -135,10 +146,11 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
         Map<String, dynamic> data = jsonDecode(response.body);
         statistics = data["Result"]?["SafetyScore"]?.toString() ?? "0";
       } else if (response.statusCode == 401) {
-        final instanceId = await fireFetch('InstanceId');
-        final instanceKey = await fireFetch('InstanceKey');
+        final instanceId =
+            await fireFetch('InstanceId'); // grabs Damoov app/group id
 
-        if (instanceId != null && instanceKey != null) {
+        if (instanceId != null) {
+          // read the patients record
           DatabaseEvent event =
               await FirebaseDatabase.instance.ref('patients/$key').once();
 
@@ -147,8 +159,9 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
             String? currentRefreshToken = data['refreshToken'];
 
             if (currentRefreshToken != null) {
+              // request new credentials/token from Damoov API
               var refreshResponse = await _auth.refreshToken(
-                  deviceToken, instanceId, instanceKey);
+                  authToken, currentRefreshToken, instanceId);
 
               if (refreshResponse != null &&
                   refreshResponse['Result'] != null) {
@@ -156,9 +169,12 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
                     refreshResponse['Result']['AccessToken']['Token'];
                 String newRefreshToken =
                     refreshResponse['Result']['RefreshToken'];
+                int expiresIn = int.parse(refreshResponse['Result']
+                        ['AccessToken']['ExpiresIn']
+                    .toString());
 
                 await UnifiedAuthService.updateTokensInFirebase(
-                    key, newAccessToken, newRefreshToken);
+                    key, newAccessToken, newRefreshToken, expiresIn);
 
                 final retryResponse = await client.get(
                   url,
@@ -227,7 +243,7 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
     List<String> emails = [];
     if (_patientsList.isNotEmpty && _summaryScores.isNotEmpty) {
       _patientsList.forEach((element) {
-        emails.add(element['email'] + "BREAK" + element['accessToken']);
+        emails.add(element['email'] + "BREAK" + element['key']);
       });
       var map = Map.fromIterables(emails, _summaryScores);
       var mapEntries = map.entries.toList()
@@ -248,7 +264,7 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
       itemCount: _sortedPatients.length,
       itemBuilder: (context, index) {
         String email = _sortedPatients[index].split("BREAK")[0];
-        String token = _sortedPatients[index].split("BREAK")[1];
+        String patientId = _sortedPatients[index].split("BREAK")[1];
         String score = _sortedScores[index];
         Color tileColor = Colors.white;
         print('Raw score: $score');
@@ -269,7 +285,8 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
             subtitle: Text("Summary Safety Score: ${score}"),
             onTap: () {
               Navigator.of(context).push(MaterialPageRoute(
-                  builder: (context) => PatientDisplayScreen(email, token)));
+                  builder: (context) =>
+                      PatientDisplayScreen(email, patientId)));
             },
             shape: Border(
               top: BorderSide(color: const Color.fromARGB(255, 98, 96, 96)),
@@ -287,7 +304,7 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
             var patient = _filteredPatientsList[index];
             String score = patient['summaryScore']?.toString() ?? '0';
             String email = patient['email'] ?? 'No email';
-            String token = patient['accessToken'];
+            String patientId = patient['key']?.toString() ?? '';
             Color tileColor = Colors.white;
 
             print('Raw score: ${score}');
@@ -309,7 +326,8 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
               subtitle: Text("Summary Safety Score: ${score}"),
               onTap: () {
                 Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => PatientDisplayScreen(email, token)));
+                    builder: (context) =>
+                        PatientDisplayScreen(email, patientId)));
               },
               shape: Border(
                 top: BorderSide(color: const Color.fromARGB(255, 98, 96, 96)),
@@ -318,35 +336,6 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
           }),
         ),
       ),
-    );
-  }
-
-  int _selectedIndex = 0;
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-      if (index == 1) {
-        Navigator.push(
-            context, MaterialPageRoute(builder: (context) => SettingsScreen()));
-      }
-    });
-  }
-
-  Widget _bottomNav() {
-    return BottomNavigationBar(
-      items: const <BottomNavigationBarItem>[
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: 'Home',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.settings),
-          label: 'Settings',
-        ),
-      ],
-      currentIndex: _selectedIndex,
-      selectedItemColor: Color.fromARGB(255, 103, 139, 183),
-      onTap: _onItemTapped,
     );
   }
 
@@ -465,7 +454,6 @@ class _PhysicianHomeScreenState extends State<PhysicianHomeScreen> {
           ],
         ],
       ),
-      bottomNavigationBar: _bottomNav(),
     );
   }
 }

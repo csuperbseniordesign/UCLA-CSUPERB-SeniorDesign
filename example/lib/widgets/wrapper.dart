@@ -1,8 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
-import 'package:telematics_sdk_example/screens/patientUI/patient_home_screen.dart';
-import 'package:telematics_sdk_example/screens/physicianUI/physician_home_screen.dart';
+import 'package:telematics_sdk_example/widgets/main_navigation.dart';
 import 'package:telematics_sdk_example/screens/welcome_screen.dart';
 
 class Wrapper extends StatelessWidget {
@@ -21,7 +20,31 @@ class Wrapper extends StatelessWidget {
           } else if (snapshot.data == null) {
             return WelcomeScreen();
           } else {
-            return _buildHomeForUser(snapshot.data!.uid);
+            return FutureBuilder<String?>(
+              future: _auth.checkUserRole(snapshot.data!.uid),
+              builder: (context, roleSnapshot) {
+                if (roleSnapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (roleSnapshot.hasError ||
+                    roleSnapshot.data == null ||
+                    roleSnapshot.data!.isEmpty) {
+                  print("Could not retrieve role.");
+                  return WelcomeScreen();
+                } else {
+                  String role = roleSnapshot.data!;
+                  print('User role: $role');
+
+                  if (role == 'Patient') {
+                    return MainNavigation.patient();
+                  } else if (role == 'Physician') {
+                    return MainNavigation.physician();
+                  } else {
+                    print("Unknown role: $role");
+                    return WelcomeScreen();
+                  }
+                }
+              },
+            );
           }
         },
       ),

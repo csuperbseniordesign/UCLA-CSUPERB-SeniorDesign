@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:telematics_sdk_example/screens/user_type_screen.dart';
 
+// import to access theme controller/shared preferences
+import 'package:telematics_sdk_example/services/theme_controller.dart';
+
 Widget _decoration() {
   return Stack(
     children: [
@@ -15,32 +18,6 @@ Widget _decoration() {
                 width: 5,
               ),
             ),
-          ),
-        ),
-      ),
-      // This is that invisible rectangle at the top left.
-      Positioned(
-        top: 28,
-        left: -100,
-        child: Container(
-          height: 175,
-          width: 175,
-          decoration: const BoxDecoration(
-            color: Color.fromARGB(255, 255, 255, 255),
-            shape: BoxShape.rectangle,
-          ),
-        ),
-      ),
-      // This is that invisible rectangle at the bottom right.
-      Positioned(
-        bottom: -45,
-        right: -13,
-        child: Container(
-          height: 175,
-          width: 175,
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.rectangle,
           ),
         ),
       ),
@@ -115,7 +92,7 @@ Widget _decoration() {
       // This belongs to the car logo.
       Positioned(
         top: 100.0,
-        right: 90,
+        right: 100,
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -176,7 +153,7 @@ Widget _header() {
 
 Widget _signInButton(BuildContext context) {
   return Padding(
-    padding: const EdgeInsets.only(top: 575, left: 35),
+    padding: const EdgeInsets.only(top: 575, left: 42),
     child: SizedBox(
       height: 70,
       width: 325,
@@ -207,8 +184,54 @@ Widget _signInButton(BuildContext context) {
 class WelcomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    // Reads the appearance currently being displayed
+    final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-        body: Stack(
-            children: [_decoration(), _header(), _signInButton(context)]));
+      body: Stack(children: [
+        _decoration(),
+        _header(),
+        _signInButton(context),
+        // placing appearance controls above landing page content
+        Positioned(
+          top: 30,
+          right: 15,
+          child: Semantics(
+            // Gives screen readers a meaningful description
+            button: true,
+            label: 'Toggle light or dark mode',
+            toggled: isDarkMode,
+
+            child: Tooltip(
+              // explains the icon-only control when hovered or long-pressed
+              message: 'Toggle light or dark mode',
+
+              child: Switch(
+                // On means Dark mode is currently displayed
+                value: isDarkMode,
+
+                // Shows a moon when selected and a sun when unselected
+                thumbIcon: WidgetStateProperty.resolveWith<Icon?>((states) {
+                  if (states.contains(WidgetState.selected)) {
+                    return const Icon(Icons.dark_mode);
+                  }
+
+                  return const Icon(Icons.light_mode);
+                }),
+
+                onChanged: (darkModeEnabled) {
+                  // Retrieve the shared controller from ThemeScope
+                  final themeController = ThemeScope.of(context);
+
+                  // Save the selected light or dark mode
+                  themeController.setThemeMode(
+                    darkModeEnabled ? ThemeMode.dark : ThemeMode.light,
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      ]),
+    );
   }
 }

@@ -22,10 +22,23 @@ class UnifiedAuthService {
       Duration(seconds: 30); // More conservative rate limit
   static Map<String, dynamic> _loginCache = {};
 
+  // helper function to convert Damoov's duration (in seconds) to UTC timestamp
+  String accessTokenExpiresAt(int expiresIn) {
+    return DateTime.now()
+        .toUtc()
+        .add(Duration(seconds: expiresIn))
+        .toIso8601String();
+  }
+
   // Converts Firebase User to custom AppUser
   AppUser? _userFromFirebaseUser(User? user) {
     return user != null ? AppUser(uid: user.uid) : null;
   }
+
+/* UNUSED: Never called. Patient sign-up uses registerPatient() and physician sign-up uses
+     registerPhysician(); this is an older copy of the same flow (its phone and
+     clientId parameters were never used). TelematicsService.registerUser, which it
+     calls, is still used by registerPatient().
 
   // Register with email, password, and user details for telematics
   Future<AppUser?> registerUser({
@@ -61,6 +74,8 @@ class UnifiedAuthService {
           'deviceToken': tokenResponse.deviceToken,
           'accessToken': tokenResponse.accessToken,
           'refreshToken': tokenResponse.refreshToken,
+          // Store expiration inside firebase record
+          'accessTokenExpiresAt': accessTokenExpiresAt(tokenResponse.expiresIn),
         });
       }
 
@@ -70,6 +85,7 @@ class UnifiedAuthService {
       return null;
     }
   }
+*/
 
   // Register with email, password, and user details for telematics
   Future<AppUser?> registerPatient({
@@ -104,6 +120,8 @@ class UnifiedAuthService {
           'deviceToken': tokenResponse.deviceToken,
           'accessToken': tokenResponse.accessToken,
           'refreshToken': tokenResponse.refreshToken,
+          // Store expiration inside firebase record
+          'accessTokenExpiresAt': accessTokenExpiresAt(tokenResponse.expiresIn),
           'gender': gender,
           'birthday': birthday,
           'email': email,
@@ -119,7 +137,11 @@ class UnifiedAuthService {
     }
   }
 
+/* UNUSED: Only ever assigned (inside getPhysicianDropdownMenu, itself unused) and never read.
+
   late final String? selectedPhysicianUid;
+
+*/
 
   Future<List<DropdownMenuItem<String>>> getPhysicianDropdownItems() async {
     List<DropdownMenuItem<String>> items = [];
@@ -165,6 +187,9 @@ class UnifiedAuthService {
     return items;
   }
 
+/* UNUSED: Never called. The sign-up screen uses getPhysicianDropdownItems(); this near-
+     duplicate only differed by setting selectedPhysicianUid, which nothing reads.
+
   Future<List<DropdownMenuItem<String>>> getPhysicianDropdownMenu(
       String currentPhysicianId) async {
     List<DropdownMenuItem<String>> items = [];
@@ -200,6 +225,7 @@ class UnifiedAuthService {
 
     return items;
   }
+*/
 
   Future<AppUser?> registerPhysician({
     required String email,
@@ -253,6 +279,7 @@ class UnifiedAuthService {
     }
   }
 
+  // Update the getDeviceTokenForUser method
   Future<String?> getDeviceTokenForUser(String? uid, bool isNewUser,
       {required String instanceId, String? instanceKey}) async {
     if (uid == null) {
@@ -288,10 +315,15 @@ class UnifiedAuthService {
               String newAccessToken =
                   loginResponse['Result']['AccessToken']['Token'];
               String newRefreshToken = loginResponse['Result']['RefreshToken'];
+              // include expiresIn if returned
+              int expiresIn = int.parse(
+                loginResponse['Result']['AccessToken']['ExpiresIn'].toString(),
+              );
 
               await FirebaseDatabase.instance.ref('patients/$uid').update({
                 'accessToken': newAccessToken,
                 'refreshToken': newRefreshToken,
+                'accessTokenExpiresAt': accessTokenExpiresAt(expiresIn),
               });
             }
 
@@ -514,12 +546,17 @@ class UnifiedAuthService {
     }
   }
 
+/* UNUSED: No caller. Nothing ever clears _loginCache, so a cached login response is reused for
+     the life of the app process. Wire this into sign-out if that is not intended.
+
   // Method to clear login cache (use when needed)
   static void clearLoginCache() {
     _loginCache.clear();
     _lastLoginAttempt = null;
     print("Login cache cleared");
   }
+*/
+
 
   // Method to reset passsword (Firebase side)
   Future<void> resetPassword(String email) async {
@@ -528,9 +565,12 @@ class UnifiedAuthService {
       print("Password reset email sent to $email");
     } catch (e) {
       print("Failed to send password reset email: $e");
+      rethrow;
       // Handle the error appropriately
     }
   }
+
+/* UNUSED: No caller; no screen offers an email change.
 
   // Method to change the current user's email
   Future<void> changeEmail(String newEmail) async {
@@ -547,14 +587,21 @@ class UnifiedAuthService {
       print("No user is currently signed in.");
     }
   }
+*/
 
   User? getCurrentUser() {
     return _auth.currentUser;
   }
 
+ /* UNUSED: No caller. Screens use getCurrentUser() or Auth().currentUser instead.
+
   AppUser? getCurrentAppUser() {
     return _userFromFirebaseUser(_auth.currentUser);
   }
+
+*/
+
+ /* UNUSED: No caller. The physician is chosen at sign-up and written by registerPatient().
 
   Future<void> addPhysician(String physician) async {
     User? user = _auth.currentUser;
@@ -564,6 +611,7 @@ class UnifiedAuthService {
           .update({'physician': physician});
     }
   }
+  */
 
   Future<void> addBirthday(String birthday) async {
     User? user = _auth.currentUser;
@@ -581,6 +629,8 @@ class UnifiedAuthService {
     }
   }
 
+  /* UNUSED: No caller. The profile screens call user.updatePassword() directly.
+
   // Method to change the current user's password
   Future<void> changePassword(String newPassword) async {
     User? user = _auth.currentUser;
@@ -596,9 +646,77 @@ class UnifiedAuthService {
       print("No user is currently signed in.");
     }
   }
+  */
+
+  // Loads the patient's current Damoov access token and refreshes it when it
+  // is missing, inside the 12-hour safety window, or explicitly expired.
+  // Keeping this here means screens do not need to manage token lifetimes.
+  Future<String?> getValidAccessToken(String patientId,
+      {bool forceRefresh = false}) async {
+    final snapshot = await _database.ref('patients/$patientId').get();
+    final data = snapshot.value as Map<dynamic, dynamic>?;
+
+    final currentAccessToken = data?['accessToken']?.toString();
+    final currentRefreshToken = data?['refreshToken']?.toString();
+    final expiresAtValue = data?['accessTokenExpiresAt']?.toString();
+
+    if (currentAccessToken == null || currentAccessToken.isEmpty) {
+      return null;
+    }
+
+    final expiresAt = expiresAtValue == null
+        ? null
+        : DateTime.tryParse(expiresAtValue)?.toUtc();
+    final refreshThreshold =
+        DateTime.now().toUtc().add(const Duration(hours: 12));
+    final shouldRefresh = forceRefresh ||
+        expiresAt == null ||
+        !expiresAt.isAfter(refreshThreshold);
+
+    // The existing access token is still usable when it is outside the
+    // refresh window, so avoid making an unnecessary network request.
+    if (!shouldRefresh || currentRefreshToken == null) {
+      return currentAccessToken;
+    }
+
+    final instanceId = await fireFetch('InstanceId');
+    if (instanceId == null || instanceId.isEmpty) {
+      return currentAccessToken;
+    }
+
+    final refreshResponse = await refreshToken(
+      currentAccessToken,
+      currentRefreshToken,
+      instanceId,
+    );
+
+    final result = refreshResponse?['Result'];
+    final accessTokenResult = result?['AccessToken'];
+    if (accessTokenResult == null || result?['RefreshToken'] == null) {
+      return currentAccessToken;
+    }
+
+    final newAccessToken = accessTokenResult['Token']?.toString();
+    final newRefreshToken = result['RefreshToken']?.toString();
+    final expiresIn = int.tryParse(accessTokenResult['ExpiresIn'].toString());
+
+    if (newAccessToken == null ||
+        newRefreshToken == null ||
+        expiresIn == null) {
+      return currentAccessToken;
+    }
+
+    await updateTokensInFirebase(
+      patientId,
+      newAccessToken,
+      newRefreshToken,
+      expiresIn,
+    );
+    return newAccessToken;
+  }
 
   // accumulated totals
-  Future<List<String>> fetchStatistics(String authToken) async {
+  Future<List<String>> fetchStatistics(String patientId) async {
     var client = http.Client();
     List<String> statistics = ['0', '0', '0']; // Default values
 
@@ -619,14 +737,36 @@ class UnifiedAuthService {
         'endDate': endDate
       });
 
+      final authToken = await getValidAccessToken(patientId);
+      if (authToken == null) {
+        print("No Damoov access token found for patient $patientId");
+        return statistics;
+      }
+
+      Future<http.Response> request(String token) {
+        return client.get(
+          url,
+          headers: {
+            'accept': 'application/json',
+            'authorization': 'Bearer $token',
+          },
+        );
+      }
+
       print("Making request to: $url");
-      final response = await client.get(
-        url,
-        headers: {
-          'accept': 'application/json',
-          'authorization': 'Bearer $authToken',
-        },
-      );
+      var response = await request(authToken);
+
+      // If the token was rejected despite the expiration check, force one
+      // refresh and retry the original request once.
+      if (response.statusCode == 401) {
+        final refreshedToken = await getValidAccessToken(
+          patientId,
+          forceRefresh: true,
+        );
+        if (refreshedToken != null) {
+          response = await request(refreshedToken);
+        }
+      }
 
       print("Statistics response status: ${response.statusCode}");
 
@@ -660,7 +800,7 @@ class UnifiedAuthService {
   }
 
   // accumulated scores
-  Future<List<String>> fetchScores(String authToken) async {
+  Future<List<String>> fetchScores(String patientId) async {
     var client = http.Client();
     List<String> scores = [];
     String accelerationScore = "";
@@ -678,13 +818,34 @@ class UnifiedAuthService {
         'endDate': now.toIso8601String().split('T')[0],
       });
 
-      final response = await client.get(
-        url,
-        headers: {
-          'accept': 'application/json',
-          'authorization': 'Bearer $authToken',
-        },
-      );
+      final authToken = await getValidAccessToken(patientId);
+      if (authToken == null) {
+        print("No Damoov access token found for patient $patientId");
+        return scores;
+      }
+
+      Future<http.Response> request(String token) {
+        return client.get(
+          url,
+          headers: {
+            'accept': 'application/json',
+            'authorization': 'Bearer $token',
+          },
+        );
+      }
+
+      var response = await request(authToken);
+
+      // Use the same one-refresh, one-retry behavior as statistics.
+      if (response.statusCode == 401) {
+        final refreshedToken = await getValidAccessToken(
+          patientId,
+          forceRefresh: true,
+        );
+        if (refreshedToken != null) {
+          response = await request(refreshedToken);
+        }
+      }
       if (response.statusCode == 200) {
         Map<String, dynamic> data = jsonDecode(response.body);
         if (data["Result"] != null) {
@@ -882,6 +1043,10 @@ class UnifiedAuthService {
     }
   }
 
+/* UNUSED: Never called Token refresh now goes through getValidAccessToken() -> refreshToken(),
+ which use the /Auth/RefreshToken endpoint and store the expiry time
+    this older helper used a different URL and stored nothing.
+
   static Future<Map<String, String>?> refreshAccessToken(
       String refreshToken) async {
     var client = http.Client();
@@ -915,21 +1080,27 @@ class UnifiedAuthService {
       client.close();
     }
   }
+*/
 
-  static Future<void> updateTokensInFirebase(
-      String patientId, String newAccessToken, String newRefreshToken) async {
+  static Future<void> updateTokensInFirebase(String patientId,
+      String newAccessToken, String newRefreshToken, int expiresIn) async {
+    final accessTokenExpiresAt = DateTime.now()
+        .toUtc()
+        .add(Duration(seconds: expiresIn))
+        .toIso8601String();
+
     await FirebaseDatabase.instance.ref('patients/$patientId').update({
       'accessToken': newAccessToken,
       'refreshToken': newRefreshToken,
+      'accessTokenExpiresAt': accessTokenExpiresAt,
     });
   }
 
-  // Add this method to handle token retrieval by using auth to check current auth and refresh token
-  // does not use the refresh access token as once it expires the refresh token does not work
   Future<Map<String, dynamic>?> refreshToken(
-      String deviceToken, String instanceId, String instanceKey) async {
+      String accessToken, String refreshToken, String instanceId) async {
     try {
-      var url = Uri.parse('https://user.telematicssdk.com/v1/Auth/Login');
+      var url =
+          Uri.parse('https://user.telematicssdk.com/v1/Auth/RefreshToken');
 
       var headers = {
         'accept': 'application/json',
@@ -938,24 +1109,25 @@ class UnifiedAuthService {
       };
 
       var body = jsonEncode({
-        'LoginFields': {'Devicetoken': deviceToken},
-        'Password': instanceKey
+        'AccessToken': accessToken,
+        'RefreshToken': refreshToken,
       });
 
       var response = await http.post(url, headers: headers, body: body).timeout(
         Duration(seconds: 10),
         onTimeout: () {
-          print("Refresh token request timed out");
+          print("Damoov token refresh request timed out");
           throw TimeoutException('Refresh token request timed out');
         },
       );
 
       if (response.statusCode == 200) {
         Map<String, dynamic> data = jsonDecode(response.body);
-        // According to Damoov docs, check for Result.AccessToken and Result.RefreshToken
+        // Damoov returns a new access token, refresh token, and expiration.
         if (data['Result'] != null &&
             data['Result']['AccessToken'] != null &&
-            data['Result']['RefreshToken'] != null) {
+            data['Result']['RefreshToken'] != null &&
+            data['Result']['AccessToken']['ExpiresIn'] != null) {
           print("Token refresh successful!");
           print(
               "New access token will expire in: ${data['Result']['AccessToken']['ExpiresIn']} seconds");

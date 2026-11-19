@@ -5,6 +5,10 @@ class Auth {
 
   User? get currentUser => _firebaseAuth.currentUser;
 
+ /* UNUSED: No caller anywhere. Screens use FirebaseAuth.instance directly (e.g.
+     FirebaseAuth.instance.signOut(), authStateChanges() in wrapper.dart) and
+     UnifiedAuthService for sign-in/sign-up.
+
   Stream<User?> get authStateChanges => _firebaseAuth.authStateChanges();
 
   Future<void> signInWithEmailAndPassword({
@@ -28,4 +32,6 @@ class Auth {
   Future<void> signOut() async {
     await _firebaseAuth.signOut();
   }
+  */
+
 }

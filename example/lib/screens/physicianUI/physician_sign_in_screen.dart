@@ -1,9 +1,12 @@
+/* UNUSED: Nothing in this file uses Timer, StreamSubscription or other dart:async types.
+
 import 'dart:async';
+*/
 import 'package:flutter/material.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:telematics_sdk_example/services/user.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:telematics_sdk_example/screens/physicianUI/physician_home_screen.dart';
+import 'package:telematics_sdk_example/widgets/main_navigation.dart';
 import 'package:telematics_sdk_example/services/UnifiedAuthService.dart';
 import 'package:flutter_pw_validator/flutter_pw_validator.dart';
 import 'package:telematics_sdk_example/widgets/show_dialog.dart';
@@ -16,10 +19,21 @@ class PhysicianSignInScreen extends StatefulWidget {
 }
 
 class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
+  /* UNUSED: Written in several places but never read, no widget displays it.
+
   String? errorMessage = ' ';
+  */
   bool isLogin = true;
+
+  /* UNUSED: Never read or written.
+
   bool isConfirmed = false;
+  */
+
+  /* UNUSED: Set around sign-in and sign-up but never read, so nothing depends on it.
+
   bool isLoading = false;
+  */
 
   final TextEditingController _controllerFirstName = TextEditingController();
   final TextEditingController _controllerLastName = TextEditingController();
@@ -34,10 +48,12 @@ class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
   final UnifiedAuthService _auth = UnifiedAuthService();
 
   String email = '';
+  /* UNUSED: Never used; the values are read from the text controllers.
   String password = '';
   String firstName = '';
   String lastName = '';
   String phone = '';
+  */
   // String clientId = '';
 
   bool _showPasswordValidator = false;
@@ -74,32 +90,6 @@ class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
                   width: 5,
                 ),
               ),
-            ),
-          ),
-        ),
-        // This is that invisible rectangle at the top left.
-        Positioned(
-          top: 28,
-          left: -100,
-          child: Container(
-            height: 175,
-            width: 175,
-            decoration: const BoxDecoration(
-              color: Color.fromARGB(255, 255, 255, 255),
-              shape: BoxShape.rectangle,
-            ),
-          ),
-        ),
-        // This is that invisible rectangle at the bottom right.
-        Positioned(
-          bottom: -45,
-          right: -13,
-          child: Container(
-            height: 175,
-            width: 175,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.rectangle,
             ),
           ),
         ),
@@ -216,32 +206,6 @@ class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
             ),
           ),
         ),
-        // This is that invisible rectangle at the top left.
-        Positioned(
-          top: 28,
-          left: -100,
-          child: Container(
-            height: 175,
-            width: 175,
-            decoration: const BoxDecoration(
-              color: Color.fromARGB(255, 255, 255, 255),
-              shape: BoxShape.rectangle,
-            ),
-          ),
-        ),
-        // This is that invisible rectangle at the bottom right.
-        Positioned(
-          bottom: -45,
-          right: -13,
-          child: Container(
-            height: 175,
-            width: 175,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.rectangle,
-            ),
-          ),
-        ),
         // This is for the blue ball-top left.
         Positioned(
           top: 30.0,
@@ -313,7 +277,8 @@ class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
         // This belongs to the car logo.
         Positioned(
           top: 100.0,
-          right: 120,
+          left: 0,
+          right: 0,
           child: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -502,10 +467,14 @@ class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
         _snackBar("Failed to reset password $e");
         // Handle the error appropriately, such as displaying an error message
       }
+    /* UNUSED: errorMessage is never displayed, so this branch did nothing visible (the closing brace below keeps the if-statement intact).
+
     } else {
       setState(() {
         errorMessage = 'Please enter your email to reset the password.';
       });
+    }
+    */
     }
   }
 
@@ -515,7 +484,7 @@ class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
 
   Widget _submitButton() {
     return Padding(
-      padding: const EdgeInsets.only(top: 30, left: 25, right: 20),
+      padding: const EdgeInsets.only(top: 30, left: 20, right: 20),
       child: SizedBox(
         height: 50,
         width: 350,
@@ -542,7 +511,10 @@ class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
 
   Future<void> createUserWithEmailAndPassword() async {
     try {
+      /* UNUSED: isLoading is never read.
+
       setState(() => isLoading = true);
+      */
       AppUser? user = await _auth.registerPhysician(
         email: _controllerEmail.text,
         password: _controllerPassword.text,
@@ -556,24 +528,34 @@ class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
         if (!mounted) return;
 
         Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => PhysicianHomeScreen()));
+            MaterialPageRoute(builder: (context) => MainNavigation.physician()));
+
+        /* UNUSED: isLoading is never read.
 
         // Stop loading
         setState(() => isLoading = false);
+        */
       } else {
         throw Exception(
             'Failed to sign in. Please check your email and password.');
       }
     } on FirebaseAuthException catch (e) {
+      /* UNUSED: errorMessage is never read. The error is printed instead of silently swallowed.
+
       setState(() {
         errorMessage = e.message;
       });
+      */
+      print(e.message);
     }
   }
 
   Future<void> _signIn() async {
     try {
+      /* UNUSED: isLoading is never read.
+
       setState(() => isLoading = true);
+      */
       AppUser? user = await _auth.signInWithEmailAndPassword(
           _controllerEmail.text, _controllerPassword.text);
 
@@ -585,15 +567,22 @@ class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
 
         if (role == "Physician") {
           Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => PhysicianHomeScreen()));
+              MaterialPageRoute(builder: (context) => MainNavigation.physician()));
+
+          /* UNUSED: isLoading is never read.
 
           //   // Stop loading
           setState(() => isLoading = false);
+          */
         } else if (role == "Patient") {
+          /* UNUSED: Only the snack bar has any visible effect; isLoading is never read.
+
           setState(() {
             isLoading = false;
             _snackBar('Patients are not allowed to sign in here.');
           });
+          */
+          _snackBar('Patients are not allowed to sign in here.');
         } else {
           throw Exception("Could not sign you in as Physician");
         }
@@ -604,10 +593,14 @@ class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
             'Failed to sign in. Please check your email and password.');
       }
     } catch (e) {
+      /* UNUSED: errorMessage and isLoading are never read. The error is printed instead ofsilently swallowed.
+
       setState(() {
         errorMessage = e.toString();
         isLoading = false;
       });
+      */
+      print(e.toString());
     }
   }
 
@@ -655,7 +648,10 @@ class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
       body: Stack(
         children: [
           // _decoration(),
+          /* UNUSED: Duplicate: _loginHeader() is added to this Stack twice; the second call a few lines below draws the same header at the same position on top of the decoration.
+          
           _loginHeader(),
+          */
           if (isLogin) ...[
             _signInDecoration(),
             // _loginHeader(),
@@ -663,51 +659,54 @@ class _PhysicianSignInScreenState extends State<PhysicianSignInScreen> {
             _decoration(),
           ],
           _loginHeader(),
-          Column(
-            // space
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              // Padding(padding: const EdgeInsets.only(bottom: 200)),
-              if (isLogin) ...[
-                Padding(padding: const EdgeInsets.only(bottom: 200)),
-                _entryField('EMAIL', _controllerEmail),
-                Padding(
-                  padding: const EdgeInsets.only(top: 20, left: 25, right: 20),
-                ),
-                _entryField('PASSWORD', _controllerPassword),
-                _forgotPasswordLink(),
-                Padding(
-                  padding: const EdgeInsets.only(top: 50, left: 25, right: 20),
-                ),
-                // Padding(padding: const EdgeInsets.only(bottom: 50)),
-                _submitButton(),
-                _loginOrRegisterButton(),
-              ] else ...[
-                _entryField('EMAIL', _controllerEmail),
-                _entryField('PASSWORD', _controllerPassword,
-                    focusNode: _passwordFocusNode),
-                if (_showPasswordValidator)
-                  FlutterPwValidator(
-                      width: 300,
-                      height: 98,
-                      minLength: 8,
-                      uppercaseCharCount: 1,
-                      specialCharCount: 1,
-                      numericCharCount: 2,
-                      onSuccess: () {},
-                      controller: _controllerPassword),
-                _passwordCheck(),
-                // _entryField('CONFIRM PASSWORD', _controllerConfirmPassword),
-                _entryField('FIRST NAME', _controllerFirstName),
-                _entryField('LAST NAME', _controllerLastName),
-                _phoneField('PHONE', _controllerPhone),
-                _entryField('NPI', _controllerNPI),
-                _entryField('ORG. NAME', _controllerOrgName),
-                _submitButton(),
-                _loginOrRegisterButton(),
+          Center(
+            child: Column(
+              // space
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                // Padding(padding: const EdgeInsets.only(bottom: 200)),
+                if (isLogin) ...[
+                  Padding(padding: const EdgeInsets.only(bottom: 50)),
+                  _entryField('EMAIL', _controllerEmail),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 20, left: 25, right: 20),
+                  ),
+                  _entryField('PASSWORD', _controllerPassword),
+                  const SizedBox(height: 10),
+                  _forgotPasswordLink(),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 0, left: 25, right: 20),
+                  ),
+                  // Padding(padding: const EdgeInsets.only(bottom: 50)),
+                  _submitButton(),
+                  _loginOrRegisterButton(),
+                ] else ...[
+                  _entryField('EMAIL', _controllerEmail),
+                  _entryField('PASSWORD', _controllerPassword,
+                      focusNode: _passwordFocusNode),
+                  if (_showPasswordValidator)
+                    FlutterPwValidator(
+                        width: 300,
+                        height: 98,
+                        minLength: 8,
+                        uppercaseCharCount: 1,
+                        specialCharCount: 1,
+                        numericCharCount: 2,
+                        onSuccess: () {},
+                        controller: _controllerPassword),
+                  _passwordCheck(),
+                  // _entryField('CONFIRM PASSWORD', _controllerConfirmPassword),
+                  _entryField('FIRST NAME', _controllerFirstName),
+                  _entryField('LAST NAME', _controllerLastName),
+                  _phoneField('PHONE', _controllerPhone),
+                  _entryField('NPI', _controllerNPI),
+                  _entryField('ORG. NAME', _controllerOrgName),
+                  _submitButton(),
+                  _loginOrRegisterButton(),
+                ],
               ],
-            ],
+            ),
           ),
           _backButton(),
         ],

@@ -1,20 +1,30 @@
+/* UNUSED: Nothing in this file uses dart:async types.
+
 import 'dart:async';
+*/
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:telematics_sdk_example/screens/welcome_screen.dart';
+/* UNUSED: Only used by the unused top-level `user` below.
+
 import 'package:telematics_sdk_example/services/auth.dart';
+*/
 import 'package:telematics_sdk_example/screens/physicianUI/settings/physician_profile_screen.dart';
 // import 'package:telematics_sdk_example/screens/tutorial_screen.dart';
-import 'package:telematics_sdk_example/screens/physicianUI/physician_home_screen.dart';
 import 'package:telematics_sdk_example/screens/patientUI/settings/about_app_screen.dart';
 import 'package:telematics_sdk_example/screens/patientUI/settings/privacy_policy_screen.dart';
 import 'package:telematics_sdk/telematics_sdk.dart';
 
 // var _deviceId = virtualDeviceToken;
 
+/* UNUSED: `user` is only used by updatePassword() below, which is never called; `uid` and
+   `deviceToken` are never read or assigned anywhere. Note `user` was also evaluated once
+   at app start, so it could be stale after sign-in/out.
+
 final User? user = Auth().currentUser;
 var uid;
 var deviceToken;
+*/
 final _trackingApi = TrackingApi();
 
 
@@ -26,16 +36,7 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  int _selectedIndex = 1;
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-      if (index == 0) {
-        Navigator.push(context,
-            MaterialPageRoute(builder: (context) => PhysicianHomeScreen()));
-      }
-    });
-  }
+  /* UNUSED: Never called. Password changes are handled in the profile screens.
 
   Future<void> updatePassword(String password) async {
     try {
@@ -47,6 +48,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  */
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -122,21 +124,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ]),
       ]),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Settings',
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Color.fromARGB(255, 103, 139, 183),
-        onTap: _onItemTapped,
-      ),
     );
   }
 }
