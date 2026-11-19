@@ -1,10 +1,12 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:telematics_sdk_example/widgets/main_navigation.dart';
 import 'package:telematics_sdk_example/screens/welcome_screen.dart';
+import 'package:telematics_sdk_example/services/UnifiedAuthService.dart';
 
 class Wrapper extends StatelessWidget {
+  final UnifiedAuthService _auth = UnifiedAuthService();
+  
   Wrapper({super.key});
 
   @override
