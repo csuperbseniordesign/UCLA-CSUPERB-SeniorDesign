@@ -50,7 +50,7 @@ class Wrapper extends StatelessWidget {
       ),
     );
   }
-
+/*
   Widget _buildHomeForUser(String uid) {
     return StreamBuilder<DatabaseEvent>(
       stream: FirebaseDatabase.instance.ref('patients/$uid').onValue,
@@ -85,4 +85,5 @@ class Wrapper extends StatelessWidget {
       },
     );
   }
+  */
 }
